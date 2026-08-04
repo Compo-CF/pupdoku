@@ -96,8 +96,12 @@ final class PuzzleSession {
     }
 
     /// Place a breed value (1...order) into the selected cell, or toggle a note
-    /// if notes mode is on. Givens are immutable. Placing the wrong value counts
-    /// a mistake (except on Puppy difficulty, which never fails).
+    /// if notes mode is on. Givens are immutable.
+    ///
+    /// A *correct* placement stays and is undoable. A *wrong* placement counts a
+    /// mistake, flashes the wrong pup briefly, then auto-removes itself — so the
+    /// player never has to reach for Undo to clear a bad guess. (Puppy difficulty
+    /// still never fails; it just clears the wrong pup.)
     func place(_ value: Int) {
         guard status == .playing, let flat = selected, !isGiven(flat) else { return }
         guard (1...order).contains(value) else { return }
@@ -107,25 +111,44 @@ final class PuzzleSession {
             return
         }
 
-        pushHistory(flat)
-
         // Tapping the same value again clears the cell.
         if working[flat] == value {
+            pushHistory(flat)
             working[flat] = 0
             clearNotes(at: flat)
             afterChange()
             return
         }
 
-        working[flat] = value
-        clearNotes(at: flat)
-        // Clear this value from peer notes for a friendlier assist.
-        if respectsAutoNotes { prunePeerNotes(of: value, around: flat) }
+        let previous = working[flat]
 
-        if value != puzzle.solution[flat] {
+        if value == puzzle.solution[flat] {
+            pushHistory(flat)
+            working[flat] = value
+            clearNotes(at: flat)
+            if respectsAutoNotes { prunePeerNotes(of: value, around: flat) }
+            afterChange()
+        } else {
+            // Wrong: show it (so the player sees what they tried), count a mistake,
+            // then auto-remove after a short beat. No undo entry — it self-clears.
+            working[flat] = value
+            clearNotes(at: flat)
             registerMistake(at: flat)
+            recomputeConflicts()
+            evaluateStatus()
+            scheduleWrongRevert(flat: flat, wrongValue: value, restoreTo: previous)
         }
-        afterChange()
+    }
+
+    /// After a short delay, remove a wrong placement (unless the player has since
+    /// changed that cell themselves).
+    private func scheduleWrongRevert(flat: Int, wrongValue: Int, restoreTo previous: Int) {
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            guard working[flat] == wrongValue else { return }
+            working[flat] = previous
+            recomputeConflicts()
+        }
     }
 
     func erase() {

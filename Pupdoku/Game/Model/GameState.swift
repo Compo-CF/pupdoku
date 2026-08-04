@@ -40,6 +40,7 @@ struct GameState: Codable, Equatable {
     // MARK: - Settings
 
     var soundOn: Bool = true
+    var musicOn: Bool = true
     var hapticsOn: Bool = true
     var highlightPeers: Bool = true      // dim/emphasize row+col+box of selection
     var highlightSameBreed: Bool = true  // emphasize all cells of the selected breed

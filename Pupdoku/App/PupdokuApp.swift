@@ -11,6 +11,7 @@ struct PupdokuApp: App {
     @State private var iap = IAPManager()
     @State private var haptics = HapticsManager()
     @State private var sound = SoundManager()
+    @State private var music = MusicManager()
     @State private var gameCenter = GameCenterManager()
     @State private var cloud = CloudSync()
 
@@ -28,6 +29,7 @@ struct PupdokuApp: App {
                 .environment(iap)
                 .environment(haptics)
                 .environment(sound)
+                .environment(music)
                 .environment(gameCenter)
                 .preferredColorScheme(.light)
                 .tint(Palette.accentDeep)
@@ -35,6 +37,8 @@ struct PupdokuApp: App {
                     // Sync feature toggles into the effect managers.
                     haptics.isEnabled = store.state.hapticsOn
                     sound.isEnabled = store.state.soundOn
+                    music.isEnabled = store.state.musicOn
+                    music.start()
 
                     store.applyLaunch()
                     await iap.start()
@@ -62,17 +66,19 @@ struct PupdokuApp: App {
                 }
                 .onChange(of: store.state.hapticsOn) { _, on in haptics.isEnabled = on }
                 .onChange(of: store.state.soundOn) { _, on in sound.isEnabled = on }
+                .onChange(of: store.state.musicOn) { _, on in music.setEnabled(on) }
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .background, .inactive:
+                music.pause()
                 store.stashCurrentGame()
                 store.save()
                 let snapshot = store.state
                 Task { try? await cloud.push(state: snapshot) }
                 Task { await gameCenter.report(state: snapshot) }
             case .active:
-                break
+                music.start()
             @unknown default:
                 break
             }

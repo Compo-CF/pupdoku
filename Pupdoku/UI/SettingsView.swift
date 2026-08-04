@@ -15,6 +15,7 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 Section("Feel") {
+                    toggle("Music", \.musicOn)
                     toggle("Sound effects", \.soundOn)
                     toggle("Haptics", \.hapticsOn)
                 }

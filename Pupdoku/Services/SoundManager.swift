@@ -1,31 +1,51 @@
 import Foundation
 import Observation
-import AudioToolbox
+import AVFoundation
 
-/// Lightweight sound effects using iOS system sound IDs so v1 ships with no
-/// bundled audio assets. Each event maps to a short, tasteful system tone;
-/// swap in custom `.caf` files later by loading them into `customSound(_:)`.
-/// Gated by the player's `soundOn` setting via `isEnabled`.
+/// Plays Pupdoku's original bundled sound effects via AVAudioPlayer. Each effect
+/// keeps a small pool of players so rapid taps can overlap without cutting each
+/// other off. Gated by the player's `soundOn` setting via `isEnabled`.
 @MainActor
 @Observable
 final class SoundManager {
     var isEnabled: Bool = true
 
-    // System sound IDs (Apple's built-in UI sounds). Chosen to be short + soft.
-    private let placeSound: SystemSoundID   = 1104  // key press "Tock"
-    private let noteSound: SystemSoundID    = 1105  // key press modifier
-    private let mistakeSound: SystemSoundID = 1053  // soft error
-    private let winSound: SystemSoundID     = 1025  // fanfare-ish "Fanfare"
-    private let unlockSound: SystemSoundID  = 1113  // "Begin Recording" chime
+    private var pools: [String: [AVAudioPlayer]] = [:]
+    private var cursor: [String: Int] = [:]
 
-    func place()   { play(placeSound) }
-    func note()    { play(noteSound) }
-    func mistake() { play(mistakeSound) }
-    func win()     { play(winSound) }
-    func unlock()  { play(unlockSound) }
+    private static let effects = ["select", "place", "note", "erase", "mistake", "hint", "win", "unlock"]
+    private static let poolSize = 3
 
-    private func play(_ id: SystemSoundID) {
-        guard isEnabled else { return }
-        AudioServicesPlaySystemSound(id)
+    init() { preload() }
+
+    private func preload() {
+        for name in Self.effects {
+            guard let url = Bundle.main.url(forResource: name, withExtension: "wav", subdirectory: "Audio")
+                ?? Bundle.main.url(forResource: name, withExtension: "wav") else { continue }
+            var pool: [AVAudioPlayer] = []
+            for _ in 0..<Self.poolSize {
+                if let p = try? AVAudioPlayer(contentsOf: url) { p.prepareToPlay(); pool.append(p) }
+            }
+            pools[name] = pool
+        }
     }
+
+    private func play(_ name: String, volume: Float = 1) {
+        guard isEnabled, let pool = pools[name], !pool.isEmpty else { return }
+        let i = (cursor[name] ?? 0) % pool.count
+        cursor[name] = i + 1
+        let p = pool[i]
+        p.volume = volume
+        p.currentTime = 0
+        p.play()
+    }
+
+    func select()  { play("select", volume: 0.5) }
+    func place()   { play("place",  volume: 0.9) }
+    func note()    { play("note",   volume: 0.6) }
+    func erase()   { play("erase",  volume: 0.6) }
+    func mistake() { play("mistake", volume: 0.8) }
+    func hint()    { play("hint",   volume: 0.8) }
+    func win()     { play("win",    volume: 0.9) }
+    func unlock()  { play("unlock", volume: 0.9) }
 }

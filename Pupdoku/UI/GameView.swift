@@ -37,6 +37,7 @@ struct GameView: View {
 
             BoardView(session: session, appearance: appearance) { flat in
                 haptics.select()
+                sound.select()
                 session.select(flat)
             }
             .padding(.horizontal, 12)
@@ -45,7 +46,7 @@ struct GameView: View {
                 session: session,
                 hintBalance: store.hintBalance,
                 onUndo: { haptics.assist(); session.undo() },
-                onErase: { session.erase() },
+                onErase: { session.erase(); sound.erase() },
                 onToggleNotes: { haptics.note(); session.toggleNotesMode() },
                 onHint: requestHint
             )
@@ -173,7 +174,7 @@ struct GameView: View {
 
     private func requestHint() {
         if store.useHintFromBalance() {
-            haptics.assist()
+            haptics.assist(); sound.hint()
         } else {
             showHintOptions = true
         }
@@ -182,7 +183,7 @@ struct GameView: View {
     private func watchRewardedHint() {
         guard let root = UIApplication.topViewController() else { return }
         ads.showRewarded(from: root, onReward: {
-            if store.revealWithRewardedHint() { haptics.assist() }
+            if store.revealWithRewardedHint() { haptics.assist(); sound.hint() }
         })
     }
 
