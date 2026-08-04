@@ -10,11 +10,13 @@ struct GameView: View {
     @Environment(GameCenterManager.self) private var gameCenter
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.requestReview) private var requestReview
 
     private enum Outcome: Int, Identifiable { case won, lost; var id: Int { rawValue } }
     @State private var outcome: Outcome?
     @State private var showHintOptions = false
     @State private var showShop = false
+    @State private var pendingReviewRequest = false
 
     private let clock = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -72,7 +74,7 @@ struct GameView: View {
         .onChange(of: session.mistakes) { _, _ in
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { session.clearMistakeFlash() }
         }
-        .fullScreenCover(item: $outcome) { result in
+        .fullScreenCover(item: $outcome, onDismiss: requestReviewIfPending) { result in
             switch result {
             case .won:
                 WinView(
@@ -192,7 +194,21 @@ struct GameView: View {
             await gameCenter.reportAchievements(store.state.unlockedAchievements)
         }
         if !unlocked.isEmpty { haptics.unlock(); sound.unlock() }
+        // Flag a rating prompt for milestone wins; it fires after the win screen
+        // is dismissed so it never covers the celebration.
+        if ReviewManager.shouldRequest(totalWins: store.state.totalWins) {
+            pendingReviewRequest = true
+        }
         outcome = .won
+    }
+
+    /// Called when the win/lose cover is dismissed. Asks for a review if this win
+    /// hit a milestone (and records it so it won't ask again this version).
+    private func requestReviewIfPending() {
+        guard pendingReviewRequest else { return }
+        pendingReviewRequest = false
+        ReviewManager.recordRequested()
+        requestReview()
     }
 
     private func handleLoss() {

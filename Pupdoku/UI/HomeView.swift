@@ -190,9 +190,12 @@ struct HomeView: View {
     }
 
     private func maybeSurfaceTip() {
-        // After a game, occasionally surface the gentle tip reminder.
+        // After a game, occasionally surface the gentle tip reminder — but never
+        // in the same session as the App Store review prompt.
+        guard !ReviewManager.didPromptThisSession else { return }
         if iap.tipReminderEligible {
             iap.recordTipPromptShown()
+            ReviewManager.didPromptThisSession = true
             activeSheet = .tip
         }
     }
