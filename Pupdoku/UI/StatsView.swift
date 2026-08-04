@@ -3,7 +3,10 @@ import SwiftUI
 /// Player statistics: totals, streaks, per-size wins, and best times.
 struct StatsView: View {
     @Environment(GameStore.self) private var store
+    @Environment(GameCenterManager.self) private var gameCenter
     @Environment(\.dismiss) private var dismiss
+
+    @State private var showGameCenter = false
 
     private var s: GameState { store.state }
 
@@ -45,7 +48,20 @@ struct StatsView: View {
             .pupBackground()
             .navigationTitle("Stats")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } } }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
+                if gameCenter.isAuthenticated {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button { showGameCenter = true } label: {
+                            Image(systemName: "trophy.fill")
+                        }
+                        .accessibilityLabel("Open leaderboards in Game Center")
+                    }
+                }
+            }
+            .fullScreenCover(isPresented: $showGameCenter) {
+                GameCenterView(panel: .leaderboards).ignoresSafeArea()
+            }
         }
     }
 

@@ -4,10 +4,12 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(GameStore.self) private var store
     @Environment(IAPManager.self) private var iap
+    @Environment(GameCenterManager.self) private var gameCenter
     @Environment(\.dismiss) private var dismiss
 
     @State private var showResetConfirm = false
     @State private var showShop = false
+    @State private var showGameCenter = false
 
     var body: some View {
         NavigationStack {
@@ -23,6 +25,15 @@ struct SettingsView: View {
                     toggle("Highlight matching breed", \.highlightSameBreed)
                     toggle("Auto-clear notes on placement", \.autoRemoveNotes)
                     toggle("Colorblind breed labels", \.colorblindLabels)
+                }
+                if gameCenter.isAuthenticated {
+                    Section("Game Center") {
+                        Button {
+                            showGameCenter = true
+                        } label: {
+                            Label("Leaderboards & Achievements", systemImage: "gamecontroller.fill")
+                        }
+                    }
                 }
                 Section("Store") {
                     Button {
@@ -58,6 +69,9 @@ struct SettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } } }
             .sheet(isPresented: $showShop) { ShopView() }
+            .fullScreenCover(isPresented: $showGameCenter) {
+                GameCenterView(panel: .dashboard).ignoresSafeArea()
+            }
             .confirmationDialog("Reset all progress?", isPresented: $showResetConfirm, titleVisibility: .visible) {
                 Button("Reset everything", role: .destructive) { store.resetProgress() }
                 Button("Cancel", role: .cancel) {}

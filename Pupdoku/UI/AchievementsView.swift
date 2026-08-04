@@ -3,7 +3,10 @@ import SwiftUI
 /// All achievements with locked / unlocked state and a progress summary.
 struct AchievementsView: View {
     @Environment(GameStore.self) private var store
+    @Environment(GameCenterManager.self) private var gameCenter
     @Environment(\.dismiss) private var dismiss
+
+    @State private var showGameCenter = false
 
     private var unlocked: Set<String> { store.state.unlockedAchievements }
 
@@ -21,7 +24,20 @@ struct AchievementsView: View {
             .pupBackground()
             .navigationTitle("Awards")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } } }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
+                if gameCenter.isAuthenticated {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button { showGameCenter = true } label: {
+                            Image(systemName: "gamecontroller.fill")
+                        }
+                        .accessibilityLabel("Open in Game Center")
+                    }
+                }
+            }
+            .fullScreenCover(isPresented: $showGameCenter) {
+                GameCenterView(panel: .achievements).ignoresSafeArea()
+            }
         }
     }
 
