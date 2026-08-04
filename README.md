@@ -61,9 +61,9 @@ open Pupdoku.xcodeproj
 
 ## Before shipping — TODO
 
-- **AdMob**: create the "Pupdoku" app in AdMob, then set the real
-  `GADApplicationIdentifier` in `project.yml` and the three prod unit IDs in
-  `Services/AdManager.swift` (currently placeholders).
+- **AdMob**: ✅ done — App ID `…~6044441811` in `project.yml`; banner /
+  interstitial / rewarded unit IDs in `Services/AdManager.swift`. (New units can
+  take up to an hour to start serving live ads.)
 - **App Store Connect**: create the bundle `com.centricfiber.pupdoku`, the IAP
   product IDs in `IAPManager.swift`, the leaderboards + achievements matching the
   IDs in `GameCenterManager.swift` / `Achievement.swift`, and the iCloud

@@ -40,7 +40,7 @@ targets:
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         NSUserTrackingUsageDescription: "Pupdoku uses your identifier to show more relevant ads and support the game."
-        GADApplicationIdentifier: "ca-app-pub-1927040492403163~0000000000"
+        GADApplicationIdentifier: "ca-app-pub-1927040492403163~6044441811"
         ITSAppUsesNonExemptEncryption: false
     settings:
       base:

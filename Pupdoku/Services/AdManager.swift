@@ -24,10 +24,10 @@ final class AdManager: NSObject {
     static let testInterstitialUnitId = "ca-app-pub-3940256099942544/4411468910"
     static let testRewardedUnitId     = "ca-app-pub-3940256099942544/1712485313"
 
-    // Production AdMob ad unit IDs — Pupdoku account. TODO: replace placeholders.
-    static let prodBannerUnitId       = "ca-app-pub-1927040492403163/0000000001"
-    static let prodInterstitialUnitId = "ca-app-pub-1927040492403163/0000000002"
-    static let prodRewardedUnitId     = "ca-app-pub-1927040492403163/0000000003"
+    // Production AdMob ad unit IDs — Pupdoku app (App ID ...~6044441811).
+    static let prodBannerUnitId       = "ca-app-pub-1927040492403163/7629966166"
+    static let prodInterstitialUnitId = "ca-app-pub-1927040492403163/5501516338"
+    static let prodRewardedUnitId     = "ca-app-pub-1927040492403163/6879157122"
 
     #if DEBUG
     var bannerUnitId       = AdManager.testBannerUnitId
