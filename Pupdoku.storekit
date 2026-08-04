@@ -1,0 +1,110 @@
+{
+  "identifier" : "9F1C2A70-PUPD-0KU0-IAP0-CONFIG00001",
+  "nonRenewingSubscriptions" : [],
+  "products" : [
+    {
+      "displayPrice" : "2.99",
+      "familyShareable" : false,
+      "internalID" : "PUP0001",
+      "localizations" : [
+        {
+          "description" : "Hide banner and interstitial ads forever.",
+          "displayName" : "Remove Ads",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.centricfiber.pupdoku.removeads",
+      "referenceName" : "Remove Ads",
+      "type" : "NonConsumable"
+    },
+    {
+      "displayPrice" : "0.99",
+      "familyShareable" : false,
+      "internalID" : "PUP0002",
+      "localizations" : [
+        {
+          "description" : "Get 10 hints to reveal tricky cells.",
+          "displayName" : "10 Hints",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.centricfiber.pupdoku.hints_small",
+      "referenceName" : "10 Hints",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "2.99",
+      "familyShareable" : false,
+      "internalID" : "PUP0003",
+      "localizations" : [
+        {
+          "description" : "Get 50 hints — best value.",
+          "displayName" : "50 Hints",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.centricfiber.pupdoku.hints_large",
+      "referenceName" : "50 Hints",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "0.99",
+      "familyShareable" : false,
+      "internalID" : "PUP0004",
+      "localizations" : [
+        {
+          "description" : "Buy the developer a treat. 🐾",
+          "displayName" : "Small Tip",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.centricfiber.pupdoku.tip.small",
+      "referenceName" : "Small Tip",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "2.99",
+      "familyShareable" : false,
+      "internalID" : "PUP0005",
+      "localizations" : [
+        {
+          "description" : "A generous tip to support Pupdoku.",
+          "displayName" : "Medium Tip",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.centricfiber.pupdoku.tip.medium",
+      "referenceName" : "Medium Tip",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "4.99",
+      "familyShareable" : false,
+      "internalID" : "PUP0006",
+      "localizations" : [
+        {
+          "description" : "A big-hearted tip. Thank you!",
+          "displayName" : "Big Tip",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.centricfiber.pupdoku.tip.large",
+      "referenceName" : "Big Tip",
+      "type" : "Consumable"
+    }
+  ],
+  "settings" : {
+    "_applicationInternalID" : "",
+    "_developerTeamID" : "7H5T5AR2X5",
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 0,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : []
+  },
+  "subscriptionGroups" : [],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

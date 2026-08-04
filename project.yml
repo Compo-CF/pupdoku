@@ -1,4 +1,6 @@
 name: Pupdoku
+fileGroups:
+  - Pupdoku.storekit
 options:
   bundleIdPrefix: com.centricfiber
   deploymentTarget:
