@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pupdoku — Sudoku, but make it puppies</title>
+<meta name="description" content="Pupdoku is a warm, family-friendly puppy twist on sudoku. Fill every row, column, and box with one of each illustrated breed. Free on iOS.">
+<meta property="og:title" content="Pupdoku">
+<meta property="og:description" content="Sudoku, but make it puppies. Free on iOS.">
+<meta property="og:image" content="./img/icon.png">
+<style>
+  :root{
+    --accent:#F2A65A; --accent-deep:#E8933F; --ink:#3D3328; --ink-soft:#8A7C6B;
+    --bg-top:#FFF7EC; --bg-bot:#FBE7CE; --card:#fff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+    color:var(--ink);background:linear-gradient(180deg,var(--bg-top),var(--bg-bot));}
+  .wrap{max-width:960px;margin:0 auto;padding:0 20px}
+  header{text-align:center;padding:64px 20px 32px}
+  header img.icon{width:120px;height:120px;border-radius:27%;box-shadow:0 12px 30px rgba(0,0,0,.15)}
+  h1{font-size:56px;margin:18px 0 6px;font-weight:900;letter-spacing:-1px}
+  .tag{font-size:19px;color:var(--ink-soft);font-weight:600;margin:0 0 26px}
+  .cta{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;
+    font-weight:800;font-size:18px;padding:15px 34px;border-radius:999px;box-shadow:0 8px 20px rgba(232,147,63,.35)}
+  .cta.secondary{background:#fff;color:var(--ink);box-shadow:0 4px 14px rgba(0,0,0,.08);margin-left:10px}
+  .breeds{display:grid;grid-template-columns:repeat(9,1fr);gap:10px;max-width:640px;margin:44px auto 8px}
+  .breeds img{width:100%;height:auto;filter:drop-shadow(0 4px 8px rgba(0,0,0,.08))}
+  .breed-note{text-align:center;color:var(--ink-soft);font-size:13px;font-weight:600;margin-bottom:16px}
+  section.features{padding:40px 0 20px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
+  .feat{background:var(--card);border-radius:20px;padding:22px;box-shadow:0 6px 18px rgba(0,0,0,.05)}
+  .feat .emoji{font-size:34px}
+  .feat h3{margin:10px 0 6px;font-size:19px;font-weight:800}
+  .feat p{margin:0;color:var(--ink-soft);font-size:15px;line-height:1.5}
+  footer{text-align:center;padding:44px 20px 60px;color:var(--ink-soft);font-size:14px}
+  footer a{color:var(--accent-deep);text-decoration:none;font-weight:700}
+  @media(max-width:640px){h1{font-size:42px}.breeds{grid-template-columns:repeat(5,1fr);max-width:340px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <img class="icon" src="./img/icon.png" alt="Pupdoku app icon">
+    <h1>Pupdoku</h1>
+    <p class="tag">Sudoku, but make it puppies 🐾</p>
+    <a class="cta" href="#">Download on the App&nbsp;Store</a>
+    <a class="cta secondary" href="#features">See features</a>
+    <div class="breeds">
+      <img src="./img/breed_corgi.svg" alt="Corgi">
+      <img src="./img/breed_husky.svg" alt="Husky">
+      <img src="./img/breed_pug.svg" alt="Pug">
+      <img src="./img/breed_dalmatian.svg" alt="Dalmatian">
+      <img src="./img/breed_golden.svg" alt="Golden Retriever">
+      <img src="./img/breed_shiba.svg" alt="Shiba Inu">
+      <img src="./img/breed_beagle.svg" alt="Beagle">
+      <img src="./img/breed_poodle.svg" alt="Poodle">
+      <img src="./img/breed_dachshund.svg" alt="Dachshund">
+    </div>
+    <p class="breed-note">Nine hand-illustrated breeds fill the grid instead of numbers.</p>
+  </div>
+</header>
+
+<section class="features wrap" id="features">
+  <div class="grid">
+    <div class="feat"><div class="emoji">🧩</div><h3>Grows with you</h3><p>Start on gentle 4×4 boards and unlock 6×6 and 9×9 as you win. Four difficulties, from no-fail Puppy mode to Hard.</p></div>
+    <div class="feat"><div class="emoji">🦴</div><h3>Daily Puzzle</h3><p>A fresh board every day — the same one for everyone — with a fire-streak to keep going.</p></div>
+    <div class="feat"><div class="emoji">✏️</div><h3>Smart assists</h3><p>Pencil notes, hints, undo, and helpful highlighting for rows, columns, boxes, and matching breeds.</p></div>
+    <div class="feat"><div class="emoji">🏆</div><h3>Awards &amp; leaderboards</h3><p>Earn achievements and climb Game Center leaderboards for wins, streaks, and perfect clears.</p></div>
+    <div class="feat"><div class="emoji">☁️</div><h3>Synced everywhere</h3><p>Your progress follows you across iPhone and iPad with private iCloud sync.</p></div>
+    <div class="feat"><div class="emoji">👶</div><h3>Family friendly</h3><p>Colorblind-friendly labels, a relaxed no-fail mode, and puppies. So many puppies.</p></div>
+  </div>
+</section>
+
+<footer>
+  <p>Made with 🧡 &nbsp;·&nbsp; <a href="./privacy.html">Privacy</a> &nbsp;·&nbsp; <a href="./terms.html">Terms</a></p>
+</footer>
+</body>
+</html>
