@@ -1,26 +1,19 @@
 import Foundation
 
-/// A puppy breed is Pupdoku's answer to a sudoku "digit". Value `1...9` maps to
-/// a specific breed with its own illustration, accent color, and a short
-/// colorblind-safe letter code. A puzzle of order N uses breeds `1...N`.
+/// A puppy breed illustration. In "Find the Puppies", each colored region shows
+/// its own breed when a puppy is placed there, so the board fills with a variety
+/// of pups. `code` is the colorblind-safe 2-letter label.
 struct Breed: Identifiable, Equatable, Hashable {
-    let value: Int          // 1...9
-    let name: String        // "Corgi"
-    let assetName: String   // image set in Assets.xcassets, e.g. "breed_corgi"
-    let hex: String         // accent / tile background
-    let code: String        // 2-letter colorblind fallback, e.g. "CO"
-    let emoji: String       // used in share text & accessibility
-
+    let value: Int
+    let name: String
+    let assetName: String
+    let hex: String
+    let code: String
+    let emoji: String
     var id: Int { value }
-
-    var accessibilityLabel: String { name }
 }
 
 enum BreedCatalog {
-    /// The full ordered roster. Index i (0-based) is breed value i+1.
-    /// Colors are chosen for maximum hue + lightness separation so all nine read
-    /// apart at a glance — and the `code` gives a non-color fallback for the
-    /// colorblind-labels accessibility setting.
     static let all: [Breed] = [
         Breed(value: 1, name: "Corgi",      assetName: "breed_corgi",      hex: "F2A65A", code: "Co", emoji: "🐕"),
         Breed(value: 2, name: "Husky",      assetName: "breed_husky",      hex: "6C8EBF", code: "Hu", emoji: "🐺"),
@@ -33,14 +26,6 @@ enum BreedCatalog {
         Breed(value: 9, name: "Dachshund",  assetName: "breed_dachshund",  hex: "6E4B3A", code: "Dx", emoji: "🌭"),
     ]
 
-    /// The breeds used by a puzzle of the given size (values 1...order).
-    static func breeds(for size: GridSize) -> [Breed] {
-        Array(all.prefix(size.order))
-    }
-
-    /// Look up a breed by its 1-based value. Returns `nil` for `0` (empty).
-    static func breed(_ value: Int) -> Breed? {
-        guard value >= 1, value <= all.count else { return nil }
-        return all[value - 1]
-    }
+    /// Breed shown for a given region index (0-based). Cycles through all 9.
+    static func breed(forRegion index: Int) -> Breed { all[index % all.count] }
 }

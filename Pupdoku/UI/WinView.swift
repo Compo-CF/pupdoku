@@ -21,7 +21,7 @@ struct WinView: View {
     private var isNewBest: Bool { bestTime.map { abs($0 - elapsed) < 0.5 } ?? true }
 
     private var shareText: String {
-        let mode = isDaily ? "the \(spec.difficulty.displayName) Daily" : "a \(spec.size.displayName) \(spec.difficulty.displayName)"
+        let mode = isDaily ? "the \(spec.difficulty.displayName) Daily" : "a \(spec.difficulty.sizeLabel) \(spec.difficulty.displayName)"
         let perfect = isPerfect ? " with a perfect clear" : ""
         return "I solved \(mode) Pupdoku in \(formatClock(elapsed))\(perfect)! 🐶🐾 Can you beat me? #Pupdoku"
     }

@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// The play screen: header (timer + mistakes), the board, controls, breed
-/// palette, and a banner. Drives the per-second clock and reacts to win/loss.
+/// The play screen: header (timer + puppies-placed), the board, and controls.
+/// Interaction is tap-to-cycle (empty -> X -> puppy). No ads ever appear during a
+/// puzzle; a sparse interstitial may show only after finishing one.
 struct GameView: View {
     @Environment(GameStore.self) private var store
     @Environment(AdManager.self) private var ads
@@ -12,8 +13,7 @@ struct GameView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.requestReview) private var requestReview
 
-    private enum Outcome: Int, Identifiable { case won, lost; var id: Int { rawValue } }
-    @State private var outcome: Outcome?
+    @State private var showWin = false
     @State private var showHintOptions = false
     @State private var showShop = false
     @State private var pendingReviewRequest = false
@@ -22,79 +22,55 @@ struct GameView: View {
 
     var body: some View {
         Group {
-            if let session = store.session {
-                content(session)
-            } else {
-                Color.clear.onAppear { dismiss() }
-            }
+            if let session = store.session { content(session) }
+            else { Color.clear.onAppear { dismiss() } }
         }
     }
 
     @ViewBuilder
-    private func content(_ session: PuzzleSession) -> some View {
-        VStack(spacing: 12) {
+    private func content(_ session: QueensSession) -> some View {
+        VStack(spacing: 14) {
             header(session)
 
             BoardView(session: session, appearance: appearance) { flat in
-                haptics.select()
-                sound.select()
-                session.select(flat)
+                tap(flat, in: session)
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 16)
+
+            rulesHint
 
             GameControlsBar(
                 session: session,
                 hintBalance: store.hintBalance,
                 onUndo: { haptics.assist(); session.undo() },
-                onErase: { session.erase(); sound.erase() },
-                onToggleNotes: { haptics.note(); session.toggleNotesMode() },
-                onHint: requestHint
+                onHint: requestHint,
+                onClear: { haptics.assist(); session.clearBoard() }
             )
-            .padding(.horizontal, 12)
-
-            BreedPaletteView(session: session, colorblind: store.state.colorblindLabels) { value in
-                place(value, in: session)
-            }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 16)
 
             Spacer(minLength: 0)
-            BannerAdSlot()
+            // No banner over the board. Reviews accept bottom banners on menus but
+            // dislike ads around active play, so Home carries the banner instead.
         }
         .pupBackground()
         .navigationBarBackButtonHidden(true)
-        .onReceive(clock) { _ in
-            if scenePhase == .active { session.tick() }
+        .onReceive(clock) { _ in if scenePhase == .active { session.tick() } }
+        .onChange(of: session.status) { _, status in if status == .won { handleWin() } }
+        .onChange(of: session.lastPlacedFlash) { _, v in
+            if v != nil { DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { session.clearFlash() } }
         }
-        .onChange(of: session.status) { _, status in
-            switch status {
-            case .won:  handleWin()
-            case .lost: handleLoss()
-            case .playing: break
-            }
-        }
-        .onChange(of: session.mistakes) { _, _ in
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { session.clearMistakeFlash() }
-        }
-        .fullScreenCover(item: $outcome, onDismiss: requestReviewIfPending) { result in
-            switch result {
-            case .won:
-                WinView(
-                    spec: session.puzzle.spec,
-                    elapsed: session.elapsed,
-                    mistakes: session.mistakes,
-                    hintsUsed: session.hintsUsed,
-                    isDaily: store.isDaily,
-                    bestTime: store.state.bestTime(for: session.puzzle.spec),
-                    newlyUnlocked: store.lastUnlockedAchievements,
-                    onPlayAgain: { Task { await playAgain(session.puzzle.spec) } },
-                    onHome: { finishToHome() }
-                )
-            case .lost:
-                LoseView(
-                    onRetry: { Task { await playAgain(session.puzzle.spec) } },
-                    onHome: { finishToHome() }
-                )
-            }
+        .fullScreenCover(isPresented: $showWin, onDismiss: requestReviewIfPending) {
+            WinView(
+                spec: session.puzzle.spec,
+                elapsed: session.elapsed,
+                mistakes: session.mistakes,
+                hintsUsed: session.hintsUsed,
+                isDaily: store.isDaily,
+                bestTime: store.state.bestTime(for: session.puzzle.spec),
+                newlyUnlocked: store.lastUnlockedAchievements,
+                onPlayAgain: { Task { await playAgain(session.puzzle.spec) } },
+                onHome: { finishToHome() }
+            )
         }
         .sheet(isPresented: $showShop) { ShopView() }
         .confirmationDialog("Out of hints", isPresented: $showHintOptions, titleVisibility: .visible) {
@@ -103,33 +79,26 @@ struct GameView: View {
             Button("Get more hints") { showShop = true }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("You're out of hints. Watch a short ad for one, or grab a hint pack.")
+            Text("You are out of hints. Watch a short ad for one, or grab a hint pack.")
         }
     }
 
-    // MARK: - Header
-
     @ViewBuilder
-    private func header(_ session: PuzzleSession) -> some View {
+    private func header(_ session: QueensSession) -> some View {
         HStack {
             Button {
-                store.stashCurrentGame()
-                dismiss()
+                store.stashCurrentGame(); dismiss()
             } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(Palette.ink)
-                    .frame(width: 40, height: 40)
-                    .background(Palette.card, in: Circle())
-                    .shadow(color: .black.opacity(0.06), radius: 5, y: 2)
+                Image(systemName: "chevron.left").font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(Palette.ink).frame(width: 40, height: 40)
+                    .background(Palette.card, in: Circle()).shadow(color: .black.opacity(0.06), radius: 5, y: 2)
             }
             Spacer()
             VStack(spacing: 1) {
-                Text(store.isDaily ? "Daily" : session.size.subtitle)
+                Text(store.isDaily ? "Daily" : session.difficulty.subtitle)
                     .font(.system(size: 16, weight: .heavy, design: .rounded))
-                Text("\(session.size.displayName) · \(session.difficulty.displayName)")
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                    .foregroundStyle(Palette.inkSoft)
+                Text("\(session.difficulty.sizeLabel) · \(session.difficulty.displayName)")
+                    .font(.system(size: 12, weight: .medium, design: .rounded)).foregroundStyle(Palette.inkSoft)
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 1) {
@@ -137,54 +106,46 @@ struct GameView: View {
                     Text(formatClock(session.elapsed))
                         .font(.system(size: 16, weight: .heavy, design: .rounded).monospacedDigit())
                 }
-                if store.state.showMistakeCounter && session.difficulty.hasMistakeLimit {
-                    Text("✕ \(session.mistakes)/\(session.mistakeLimit)")
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
-                        .foregroundStyle(session.mistakes >= session.mistakeLimit ? Palette.danger : Palette.inkSoft)
-                }
+                Text("🐶 \(session.puppyCount)/\(session.n)")
+                    .font(.system(size: 12, weight: .semibold, design: .rounded)).foregroundStyle(Palette.inkSoft)
             }
-            .frame(minWidth: 44, alignment: .trailing)
+            .frame(minWidth: 52, alignment: .trailing)
         }
-        .foregroundStyle(Palette.ink)
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
+        .foregroundStyle(Palette.ink).padding(.horizontal, 16).padding(.top, 8)
+    }
+
+    private var rulesHint: some View {
+        Text("One puppy per row, column & color — none touching")
+            .font(.system(size: 12, weight: .semibold, design: .rounded))
+            .foregroundStyle(Palette.inkSoft)
+            .padding(.horizontal, 16)
     }
 
     private var appearance: BoardAppearance {
-        BoardAppearance(
-            highlightPeers: store.state.highlightPeers,
-            highlightSameBreed: store.state.highlightSameBreed,
-            colorblindLabels: store.state.colorblindLabels
-        )
+        BoardAppearance(highlightConflicts: store.state.highlightConflicts,
+                        colorblindLabels: store.state.colorblindLabels)
     }
 
-    // MARK: - Actions
-
-    private func place(_ value: Int, in session: PuzzleSession) {
-        let before = session.mistakes
-        session.place(value)
-        if session.isNotesMode {
-            sound.note()
-        } else if session.mistakes > before {
-            haptics.mistake(); sound.mistake()
-        } else {
-            haptics.place(); sound.place()
+    private func tap(_ flat: Int, in session: QueensSession) {
+        let before = session.state(at: flat)
+        session.cycle(flat)
+        let after = session.state(at: flat)
+        haptics.select()
+        switch after {
+        case .puppy: sound.place()
+        case .marked: sound.note()
+        case .empty: if before == .puppy { sound.note() }
         }
     }
 
     private func requestHint() {
-        if store.useHintFromBalance() {
-            haptics.assist(); sound.hint()
-        } else {
-            showHintOptions = true
-        }
+        if store.useHintFromBalance() { haptics.assist(); sound.hint() }
+        else { showHintOptions = true }
     }
 
     private func watchRewardedHint() {
         guard let root = UIApplication.topViewController() else { return }
-        ads.showRewarded(from: root, onReward: {
-            if store.revealWithRewardedHint() { haptics.assist(); sound.hint() }
-        })
+        ads.showRewarded(from: root, onReward: { if store.revealWithRewardedHint() { haptics.assist(); sound.hint() } })
     }
 
     private func handleWin() {
@@ -195,16 +156,10 @@ struct GameView: View {
             await gameCenter.reportAchievements(store.state.unlockedAchievements)
         }
         if !unlocked.isEmpty { haptics.unlock(); sound.unlock() }
-        // Flag a rating prompt for milestone wins; it fires after the win screen
-        // is dismissed so it never covers the celebration.
-        if ReviewManager.shouldRequest(totalWins: store.state.totalWins) {
-            pendingReviewRequest = true
-        }
-        outcome = .won
+        if ReviewManager.shouldRequest(totalWins: store.state.totalWins) { pendingReviewRequest = true }
+        showWin = true
     }
 
-    /// Called when the win/lose cover is dismissed. Asks for a review if this win
-    /// hit a milestone (and records it so it won't ask again this version).
     private func requestReviewIfPending() {
         guard pendingReviewRequest else { return }
         pendingReviewRequest = false
@@ -212,20 +167,14 @@ struct GameView: View {
         requestReview()
     }
 
-    private func handleLoss() {
-        haptics.lose()
-        store.recordLossFromSession()
-        outcome = .lost
-    }
-
     private func playAgain(_ spec: PuzzleSpec) async {
-        outcome = nil
+        showWin = false
         maybeShowInterstitial()
         await store.startNewGame(spec: spec)
     }
 
     private func finishToHome() {
-        outcome = nil
+        showWin = false
         maybeShowInterstitial()
         store.abandonCurrentGame()
         dismiss()
@@ -233,6 +182,6 @@ struct GameView: View {
 
     private func maybeShowInterstitial() {
         guard let root = UIApplication.topViewController() else { return }
-        ads.showInterstitialIfReady(from: root)
+        ads.showInterstitialIfReady(from: root, totalWins: store.state.totalWins)
     }
 }

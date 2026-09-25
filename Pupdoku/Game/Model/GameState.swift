@@ -1,95 +1,68 @@
 import Foundation
 
-/// The full persisted state of a player: progression, statistics, streaks,
-/// entitlements, settings, and unlocked achievements. One value, encoded to a
-/// single JSON file by `Persistence` and mirrored to CloudKit by `CloudSync`.
+/// The full persisted player state: progression, stats, streaks, entitlements,
+/// settings, and unlocked achievements. Encoded to one JSON file by
+/// `Persistence` and mirrored to CloudKit by `CloudSync`.
 struct GameState: Codable, Equatable {
 
     // MARK: - Progression & stats
-
-    /// Wins keyed by grid size raw value (4/6/9). Drives size unlocks.
-    var winsBySize: [Int: Int] = [:]
-    /// Wins keyed by "size-difficulty" (e.g. "9-3"). Fine-grained stats.
-    var winsBySpec: [String: Int] = [:]
-    /// Best (lowest) completion time keyed by "size-difficulty".
+    /// Wins keyed by difficulty raw value ("0"..."4"). Drives size unlocks.
+    var winsByDifficulty: [Int: Int] = [:]
+    /// Best (lowest) completion time keyed by difficulty raw value.
     var bestTimes: [String: TimeInterval] = [:]
 
     var totalWins: Int = 0
     var totalHintsUsed: Int = 0
     var totalMistakes: Int = 0
-    var perfectWins: Int = 0        // won with zero mistakes and zero hints
+    var perfectWins: Int = 0          // no mistakes, no hints
     var totalPlaySeconds: TimeInterval = 0
 
     // MARK: - Streaks (Daily Puzzle)
-
     var dailyStreak: Int = 0
     var longestDailyStreak: Int = 0
-    /// Epoch-day (days since 1970, UTC) of the last completed daily.
     var lastDailyEpochDay: Int = 0
 
     // MARK: - Entitlements
-
     var removeAdsOwned: Bool = false
-    /// Free + purchased hints available to spend. New players start with a few.
     var hintBalance: Int = 3
 
     // MARK: - Achievements
-
     var unlockedAchievements: Set<String> = []
 
     // MARK: - Settings
-
     var soundOn: Bool = true
     var musicOn: Bool = true
     var hapticsOn: Bool = true
-    var highlightPeers: Bool = true      // dim/emphasize row+col+box of selection
-    var highlightSameBreed: Bool = true  // emphasize all cells of the selected breed
-    var autoRemoveNotes: Bool = true     // clear peer notes when placing a breed
+    var highlightConflicts: Bool = true   // paint conflicting puppies red
     var showTimer: Bool = true
     var showMistakeCounter: Bool = true
-    var colorblindLabels: Bool = false   // show 2-letter breed codes on tiles
+    var colorblindLabels: Bool = false    // show 2-letter breed codes on puppies
 
-    // MARK: - Onboarding / housekeeping
-
+    // MARK: - Housekeeping
     var hasSeenOnboarding: Bool = false
-    /// A saved, resumable in-progress game (nil if none).
-    var savedGame: SavedProgress?
+    var savedGame: QueensSavedProgress?
 
     init() {}
 
-    // MARK: - Progression logic
+    // MARK: - Progression
+    static let winsToUnlockNext = 3
 
-    static let winsToUnlockSix  = 3
-    static let winsToUnlockNine = 3
+    func wins(for difficulty: Difficulty) -> Int { winsByDifficulty[difficulty.rawValue] ?? 0 }
 
-    func wins(for size: GridSize) -> Int { winsBySize[size.order] ?? 0 }
-
-    /// 4×4 is always open; 6×6 opens after enough 4×4 wins; 9×9 after 6×6 wins.
-    func isUnlocked(_ size: GridSize) -> Bool {
-        switch size {
-        case .four: return true
-        case .six:  return wins(for: .four) >= Self.winsToUnlockSix
-        case .nine: return wins(for: .six)  >= Self.winsToUnlockNine
-        }
+    /// Puppy (5×5) always open; each larger size opens after 3 wins on the previous.
+    func isUnlocked(_ difficulty: Difficulty) -> Bool {
+        guard let prev = difficulty.previous else { return true }
+        return wins(for: prev) >= Self.winsToUnlockNext
     }
 
-    /// Wins still needed before `size` unlocks (0 if already unlocked).
-    func winsUntilUnlock(_ size: GridSize) -> Int {
-        switch size {
-        case .four: return 0
-        case .six:  return max(0, Self.winsToUnlockSix - wins(for: .four))
-        case .nine: return max(0, Self.winsToUnlockNine - wins(for: .six))
-        }
+    func winsUntilUnlock(_ difficulty: Difficulty) -> Int {
+        guard let prev = difficulty.previous else { return 0 }
+        return max(0, Self.winsToUnlockNext - wins(for: prev))
     }
 
-    static func specKey(_ spec: PuzzleSpec) -> String { "\(spec.size.order)-\(spec.difficulty.rawValue)" }
-
-    func bestTime(for spec: PuzzleSpec) -> TimeInterval? { bestTimes[Self.specKey(spec)] }
+    func bestTime(for spec: PuzzleSpec) -> TimeInterval? { bestTimes[spec.key] }
 
     // MARK: - Recording a win
-
-    /// Fold a completed puzzle into the stats. Returns the set of newly-unlocked
-    /// achievement IDs so the caller can present them.
     @discardableResult
     mutating func recordWin(spec: PuzzleSpec,
                             elapsed: TimeInterval,
@@ -97,53 +70,36 @@ struct GameState: Codable, Equatable {
                             hintsUsed: Int,
                             isDaily: Bool,
                             todayEpochDay: Int) -> [String] {
-        winsBySize[spec.size.order, default: 0] += 1
-        winsBySpec[Self.specKey(spec), default: 0] += 1
+        winsByDifficulty[spec.difficulty.rawValue, default: 0] += 1
         totalWins += 1
         totalMistakes += mistakes
         totalHintsUsed += hintsUsed
         totalPlaySeconds += elapsed
         if mistakes == 0 && hintsUsed == 0 { perfectWins += 1 }
 
-        let key = Self.specKey(spec)
-        if let prev = bestTimes[key] {
-            if elapsed < prev { bestTimes[key] = elapsed }
-        } else {
-            bestTimes[key] = elapsed
-        }
+        if let prev = bestTimes[spec.key] { if elapsed < prev { bestTimes[spec.key] = elapsed } }
+        else { bestTimes[spec.key] = elapsed }
 
         if isDaily { recordDailyCompletion(todayEpochDay: todayEpochDay) }
-
         savedGame = nil
         return AchievementCatalog.evaluate(into: &self)
     }
 
     private mutating func recordDailyCompletion(todayEpochDay: Int) {
-        guard todayEpochDay != lastDailyEpochDay else { return } // already counted today
-        if todayEpochDay == lastDailyEpochDay + 1 {
-            dailyStreak += 1
-        } else {
-            dailyStreak = 1
-        }
+        guard todayEpochDay != lastDailyEpochDay else { return }
+        dailyStreak = (todayEpochDay == lastDailyEpochDay + 1) ? dailyStreak + 1 : 1
         lastDailyEpochDay = todayEpochDay
         longestDailyStreak = max(longestDailyStreak, dailyStreak)
     }
 
-    /// If the player misses a day, the streak should read as broken. Call on launch.
     mutating func expireDailyStreakIfStale(todayEpochDay: Int) {
-        if dailyStreak > 0, todayEpochDay > lastDailyEpochDay + 1 {
-            dailyStreak = 0
-        }
+        if dailyStreak > 0, todayEpochDay > lastDailyEpochDay + 1 { dailyStreak = 0 }
     }
 
-    /// True if today's daily has already been completed.
     func completedDaily(today: Int) -> Bool { today == lastDailyEpochDay }
 }
 
 extension Date {
-    /// Days since the Unix epoch in UTC — a stable per-day bucket for streaks
-    /// and the daily-puzzle seed.
-    var epochDayUTC: Int {
-        Int((timeIntervalSince1970 / 86400).rounded(.down))
-    }
+    /// Days since the Unix epoch in UTC — a stable per-day bucket for streaks + daily seed.
+    var epochDayUTC: Int { Int((timeIntervalSince1970 / 86400).rounded(.down)) }
 }

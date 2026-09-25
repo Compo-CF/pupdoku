@@ -1,20 +1,19 @@
 import SwiftUI
 import AppTrackingTransparency
 
-/// A short three-page welcome that teaches the one rule and the controls, then
-/// requests App Tracking Transparency as the final step (matching Cosmica's
-/// placement so the prompt isn't suppressed by a competing modal).
+/// Three-page welcome that teaches the "Find the Puppies" rules, then requests
+/// App Tracking Transparency last (so no other modal suppresses it).
 struct OnboardingView: View {
     @Environment(GameStore.self) private var store
     @State private var page = 0
 
     private let pages: [(emoji: String, title: String, body: String)] = [
         ("🐶", "Welcome to Pupdoku!",
-         "It's sudoku — but with puppies. Fill the grid so every row, column, and box has one of each breed."),
-        ("👆", "Tap a cell, pick a pup",
-         "Tap an empty square, then tap a breed below to place it. Tap the same breed again to clear it."),
-        ("🦴", "Notes, hints & the Daily",
-         "Stuck? Use Notes to pencil in guesses, spend a Hint, or come back each day for a fresh Daily Puzzle and build a streak."),
+         "Find the hidden puppies on a colored board. Tap a square to rule it out, tap again to place a puppy."),
+        ("🎨", "One puppy per color",
+         "Every row, every column, and every colored region holds exactly one puppy — and no two puppies may touch, even diagonally."),
+        ("🦴", "Deduce, don't guess",
+         "Mark the squares you have ruled out to zero in on where each puppy must go. Stuck? Use a hint or come back for the Daily Puzzle."),
     ]
 
     var body: some View {
@@ -26,12 +25,10 @@ struct OnboardingView: View {
                         Text(pages[i].emoji).font(.system(size: 90))
                         Text(pages[i].title)
                             .font(.system(size: 28, weight: .black, design: .rounded))
-                            .multilineTextAlignment(.center)
-                            .foregroundStyle(Palette.ink)
+                            .multilineTextAlignment(.center).foregroundStyle(Palette.ink)
                         Text(pages[i].body)
                             .font(.system(size: 16, weight: .medium, design: .rounded))
-                            .multilineTextAlignment(.center)
-                            .foregroundStyle(Palette.inkSoft)
+                            .multilineTextAlignment(.center).foregroundStyle(Palette.inkSoft)
                             .padding(.horizontal, 36)
                         Spacer()
                     }
@@ -43,13 +40,10 @@ struct OnboardingView: View {
             Button(action: advance) {
                 Text(page < pages.count - 1 ? "Next" : "Let's Play!")
                     .font(.system(size: 18, weight: .heavy, design: .rounded))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(Palette.accent, in: Capsule())
-                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity).padding(.vertical, 16)
+                    .background(Palette.accent, in: Capsule()).foregroundStyle(.white)
             }
-            .padding(.horizontal, 32)
-            .padding(.bottom, 24)
+            .padding(.horizontal, 32).padding(.bottom, 24)
         }
         .pupBackground()
         .interactiveDismissDisabled()

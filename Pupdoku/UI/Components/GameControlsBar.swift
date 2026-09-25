@@ -1,39 +1,30 @@
 import SwiftUI
 
-/// Undo / Erase / Notes / Hint control row shown above the breed palette.
+/// Undo / Hint / Clear controls beneath the board. Undo is always present
+/// (removing it is exactly the kind of change players punish in reviews).
 struct GameControlsBar: View {
-    let session: PuzzleSession
+    let session: QueensSession
     let hintBalance: Int
     let onUndo: () -> Void
-    let onErase: () -> Void
-    let onToggleNotes: () -> Void
     let onHint: () -> Void
+    let onClear: () -> Void
 
     var body: some View {
-        HStack(spacing: 10) {
-            controlButton(system: "arrow.uturn.backward", label: "Undo",
-                          enabled: session.canUndo, action: onUndo)
-            controlButton(system: "eraser", label: "Erase",
-                          enabled: session.selected != nil, action: onErase)
-            controlButton(system: session.isNotesMode ? "pencil.circle.fill" : "pencil",
-                          label: "Notes", active: session.isNotesMode,
-                          enabled: true, action: onToggleNotes)
-            controlButton(system: "lightbulb.fill", label: "Hint",
-                          badge: hintBalance, enabled: true, action: onHint)
+        HStack(spacing: 12) {
+            button(system: "arrow.uturn.backward", label: "Undo", enabled: session.canUndo, action: onUndo)
+            button(system: "lightbulb.fill", label: "Hint", badge: hintBalance, enabled: true, action: onHint)
+            button(system: "trash", label: "Clear", enabled: session.puppyCount > 0 || session.canUndo, action: onClear)
         }
     }
 
     @ViewBuilder
-    private func controlButton(system: String, label: String,
-                               badge: Int? = nil, active: Bool = false,
-                               enabled: Bool, action: @escaping () -> Void) -> some View {
+    private func button(system: String, label: String, badge: Int? = nil,
+                        enabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            VStack(spacing: 3) {
+            VStack(spacing: 4) {
                 ZStack(alignment: .topTrailing) {
-                    Image(systemName: system)
-                        .font(.system(size: 20, weight: .semibold))
-                        .frame(width: 30, height: 26)
-                    if let badge, badge >= 0 {
+                    Image(systemName: system).font(.system(size: 20, weight: .semibold)).frame(width: 30, height: 26)
+                    if let badge {
                         Text("\(badge)")
                             .font(.system(size: 10, weight: .heavy, design: .rounded))
                             .foregroundStyle(.white)
@@ -42,14 +33,12 @@ struct GameControlsBar: View {
                             .offset(x: 10, y: -8)
                     }
                 }
-                Text(label)
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                Text(label).font(.system(size: 11, weight: .semibold, design: .rounded))
             }
-            .foregroundStyle(active ? Palette.accentDeep : Palette.ink)
+            .foregroundStyle(Palette.ink)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 10)
-            .background(active ? Palette.selected : Palette.card,
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .padding(.vertical, 12)
+            .background(Palette.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Palette.line, lineWidth: 1))
             .opacity(enabled ? 1 : 0.4)
         }

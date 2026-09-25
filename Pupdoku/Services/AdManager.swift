@@ -3,28 +3,23 @@ import Observation
 import UIKit
 import GoogleMobileAds
 
-/// Thin wrapper around Google Mobile Ads. All three formats are exposed:
-/// - Banner: pinned under the Home screen and (optionally) below the board.
-/// - Rewarded: player-initiated "watch an ad for a free hint" from the game bar
-///   and the shop. Always available, even for Remove-Ads owners.
-/// - Interstitial: shown occasionally after finishing a puzzle, rate-limited to
-///   1 per 3 min and gated by Remove Ads.
+/// Thin wrapper around Google Mobile Ads with a deliberately gentle interstitial
+/// policy (the competitor's #1 complaint is ad frequency/length and surprise
+/// mid-game video). Our rules:
+///   - Banner: menus/Home only, never over an active board.
+///   - Rewarded: strictly opt-in ("watch for a hint").
+///   - Interstitial: only BETWEEN puzzles, never during one; a first-run grace
+///     of `interstitialGraceWins` wins, then at most once every
+///     `interstitialEveryNWins` completions AND once per 3 minutes.
 ///
-/// `#if DEBUG` keeps dev builds on Google's test ad units so simulator / Xcode
-/// runs never generate real impressions. TestFlight & App Store use prod IDs.
-///
-/// NOTE: The prod IDs below are placeholders — create the "Pupdoku" app in your
-/// AdMob account, then drop in the real App ID (project.yml `GADApplicationIdentifier`)
-/// and the three unit IDs here before shipping.
+/// DEBUG uses Google test units; Release uses the real Pupdoku units.
 @MainActor
 @Observable
 final class AdManager: NSObject {
-    // Google test IDs — safe to ship, no real impressions / no payout.
     static let testBannerUnitId       = "ca-app-pub-3940256099942544/2934735716"
     static let testInterstitialUnitId = "ca-app-pub-3940256099942544/4411468910"
     static let testRewardedUnitId     = "ca-app-pub-3940256099942544/1712485313"
 
-    // Production AdMob ad unit IDs — Pupdoku app (App ID ...~6044441811).
     static let prodBannerUnitId       = "ca-app-pub-1927040492403163/7629966166"
     static let prodInterstitialUnitId = "ca-app-pub-1927040492403163/5501516338"
     static let prodRewardedUnitId     = "ca-app-pub-1927040492403163/6879157122"
@@ -46,7 +41,12 @@ final class AdManager: NSObject {
     private var rewardedAd: RewardedAd?
     private var interstitialAd: InterstitialAd?
     private var lastInterstitialShownAt: Date?
+    private var lastInterstitialWin: Int = 0
+
+    // Humane pacing.
     private let interstitialMinInterval: TimeInterval = 180  // 3 min
+    private let interstitialGraceWins = 5                    // no interstitials until the 5th win
+    private let interstitialEveryNWins = 3                   // then at most 1 per 3 completions
 
     func configure(removeAdsOwned: Bool) {
         self.removeAdsOwned = removeAdsOwned
@@ -57,17 +57,12 @@ final class AdManager: NSObject {
     }
 
     // MARK: - Rewarded
-
     func loadRewarded() async {
         do {
             let ad = try await RewardedAd.load(with: rewardedUnitId, request: Request())
-            rewardedAd = ad
-            rewardedReady = true
+            rewardedAd = ad; rewardedReady = true
         } catch {
             rewardedReady = false
-            print("[AdManager] Rewarded load failed: \(error)")
-            // New AdMob accounts often return "no fill" for hours; keep retrying
-            // so the "watch for a hint" button comes alive once inventory matches.
             Task { [weak self] in
                 try? await Task.sleep(nanoseconds: 30_000_000_000)
                 await self?.loadRewarded()
@@ -75,34 +70,20 @@ final class AdManager: NSObject {
         }
     }
 
-    /// Present the rewarded ad. `onReward` fires on a successful reward;
-    /// `onDismiss` always fires when the ad closes.
-    func showRewarded(from root: UIViewController,
-                      onReward: @escaping () -> Void,
-                      onDismiss: @escaping () -> Void = {}) {
-        guard let ad = rewardedAd else {
-            onDismiss()
-            Task { await loadRewarded() }
-            return
-        }
+    func showRewarded(from root: UIViewController, onReward: @escaping () -> Void, onDismiss: @escaping () -> Void = {}) {
+        guard let ad = rewardedAd else { onDismiss(); Task { await loadRewarded() }; return }
         rewardedReady = false
         ad.present(from: root) { onReward() }
-        Task {
-            await loadRewarded()
-            onDismiss()
-        }
+        Task { await loadRewarded(); onDismiss() }
     }
 
     // MARK: - Interstitial
-
     func loadInterstitial() async {
         do {
             let ad = try await InterstitialAd.load(with: interstitialUnitId, request: Request())
-            interstitialAd = ad
-            interstitialReady = true
+            interstitialAd = ad; interstitialReady = true
         } catch {
             interstitialReady = false
-            print("[AdManager] Interstitial load failed: \(error)")
             Task { [weak self] in
                 try? await Task.sleep(nanoseconds: 30_000_000_000)
                 guard let self else { return }
@@ -111,15 +92,16 @@ final class AdManager: NSObject {
         }
     }
 
-    func showInterstitialIfReady(from root: UIViewController) {
+    /// Call ONLY between puzzles. Applies the grace/frequency/rate gates.
+    func showInterstitialIfReady(from root: UIViewController, totalWins: Int) {
         guard !removeAdsOwned else { return }
+        guard totalWins >= interstitialGraceWins else { return }
+        guard totalWins - lastInterstitialWin >= interstitialEveryNWins else { return }
         if let last = lastInterstitialShownAt, Date().timeIntervalSince(last) < interstitialMinInterval { return }
-        guard let ad = interstitialAd else {
-            Task { await loadInterstitial() }
-            return
-        }
+        guard let ad = interstitialAd else { Task { await loadInterstitial() }; return }
         ad.present(from: root)
         lastInterstitialShownAt = Date()
+        lastInterstitialWin = totalWins
         interstitialReady = false
         Task { await loadInterstitial() }
     }

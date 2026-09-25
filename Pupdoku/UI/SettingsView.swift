@@ -22,10 +22,8 @@ struct SettingsView: View {
                 Section("Board") {
                     toggle("Show timer", \.showTimer)
                     toggle("Show mistake counter", \.showMistakeCounter)
-                    toggle("Highlight row, column & box", \.highlightPeers)
-                    toggle("Highlight matching breed", \.highlightSameBreed)
-                    toggle("Auto-clear notes on placement", \.autoRemoveNotes)
-                    toggle("Colorblind breed labels", \.colorblindLabels)
+                    toggle("Highlight conflicts", \.highlightConflicts)
+                    toggle("Colorblind puppy labels", \.colorblindLabels)
                 }
                 if gameCenter.isAuthenticated {
                     Section("Game Center") {

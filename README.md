@@ -1,7 +1,7 @@
 # Pupdoku 🐶
 
-Sudoku, but with puppies. A warm, family-friendly take on the classic — fill each
-row, column, and box with one of each illustrated breed. Built for iOS in
+Find the hidden puppies! A cozy logic-deduction puzzle (Queens-style) with illustrated breeds.
+Built for iOS in
 SwiftUI, on the same stack as Cosmica.
 
 ## Features

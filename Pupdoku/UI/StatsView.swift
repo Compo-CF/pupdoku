@@ -7,7 +7,6 @@ struct StatsView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var showGameCenter = false
-
     private var s: GameState { store.state }
 
     var body: some View {
@@ -15,7 +14,7 @@ struct StatsView: View {
             ScrollView {
                 VStack(spacing: 16) {
                     grid([
-                        ("Puzzles Won", "\(s.totalWins)"),
+                        ("Puzzles Solved", "\(s.totalWins)"),
                         ("Perfect Clears", "\(s.perfectWins)"),
                         ("Daily Streak", "\(s.dailyStreak)"),
                         ("Longest Streak", "\(s.longestDailyStreak)"),
@@ -24,22 +23,20 @@ struct StatsView: View {
                     ])
 
                     section("Wins by Size") {
-                        ForEach(GridSize.allCases) { size in
-                            row(size.displayName, "\(s.wins(for: size))")
+                        ForEach(Difficulty.allCases) { d in
+                            row("\(d.sizeLabel)  ·  \(d.displayName)", "\(s.wins(for: d))")
                         }
                     }
 
                     section("Best Times") {
                         let entries = bestTimeEntries()
                         if entries.isEmpty {
-                            Text("Win a puzzle to set your first record!")
+                            Text("Solve a board to set your first record!")
                                 .font(.system(size: 13, weight: .medium, design: .rounded))
                                 .foregroundStyle(Palette.inkSoft)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         } else {
-                            ForEach(entries, id: \.0) { entry in
-                                row(entry.0, formatClock(entry.1))
-                            }
+                            ForEach(entries, id: \.0) { entry in row(entry.0, formatClock(entry.1)) }
                         }
                     }
                 }
@@ -52,10 +49,8 @@ struct StatsView: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
                 if gameCenter.isAuthenticated {
                     ToolbarItem(placement: .primaryAction) {
-                        Button { showGameCenter = true } label: {
-                            Image(systemName: "trophy.fill")
-                        }
-                        .accessibilityLabel("Open leaderboards in Game Center")
+                        Button { showGameCenter = true } label: { Image(systemName: "trophy.fill") }
+                            .accessibilityLabel("Open leaderboards in Game Center")
                     }
                 }
             }
@@ -67,12 +62,9 @@ struct StatsView: View {
 
     private func bestTimeEntries() -> [(String, TimeInterval)] {
         var out: [(String, TimeInterval)] = []
-        for size in GridSize.allCases {
-            for diff in Difficulty.allCases {
-                let spec = PuzzleSpec(size: size, difficulty: diff)
-                if let t = s.bestTime(for: spec) {
-                    out.append(("\(size.displayName) · \(diff.displayName)", t))
-                }
+        for d in Difficulty.allCases {
+            if let t = s.bestTime(for: PuzzleSpec(difficulty: d)) {
+                out.append(("\(d.sizeLabel) · \(d.displayName)", t))
             }
         }
         return out
