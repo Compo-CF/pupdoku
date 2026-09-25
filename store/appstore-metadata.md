@@ -1,64 +1,62 @@
-# Pupdoku — App Store metadata (paste-ready)
+# Pupdoku v2.0 — App Store metadata (paste-ready)
+
+Mechanic: "Find the Puppies" — a Queens-style logic-deduction puzzle. Not sudoku.
 
 ## App Name  (max 30)
-Pupdoku: Puppy Sudoku
+Pupdoku: Puppy Puzzles
 
 ## Subtitle  (max 30)
-Cute dogs, cozy logic puzzles
+Find the puppies — logic game
 
 ## Promotional Text  (max 170 — editable anytime without review)
-Sudoku, but make it puppies! Fill every row, column and box with a different adorable breed. Three sizes, a daily puzzle, and a whole pack of cute dogs to meet.
+Find the hidden puppies! Place one pup in every row, column and color — none touching. A cozy daily brain game with a whole pack of adorable breeds. No surprise ads.
 
 ## Keywords  (max 100, comma-separated, no spaces)
-brain,number,grid,daily,offline,relaxing,dog,animal,pet,kids,family,mind,zen,solver,board
+brain,deduction,dogs,animal,pet,kids,family,daily,offline,relaxing,zen,queens,region,solver,star
 
 ## Categories
-- Primary: Games → Puzzle
-- Secondary: Games → Board
+- Primary: Games -> Puzzle
+- Secondary: Games -> Board
 
 ## Age Rating
 4+
 
 ## Description
-Meet Pupdoku — the cutest way to play sudoku. Instead of numbers, you fill the board with adorable illustrated puppies, so every puzzle ends with a grid full of happy dogs. Cozy, colorful, and easy to pick up, it's sudoku the whole family can enjoy.
+Meet Pupdoku — a cozy logic puzzle where you find the hidden puppies. Every board is split into colorful regions, and your job is to figure out exactly where each pup belongs. Easy to learn, wonderfully tricky to master, and stuffed with adorable illustrated breeds.
 
-FILL THE BOARD WITH PUPPIES
-Every row, column, and box needs one of each breed — Corgi, Husky, Pug, Dalmatian, Golden, Shiba, Beagle, Poodle, and Dachshund. Same great sudoku logic, a lot more tail-wagging.
+ONE PUP PER ROW, COLUMN & COLOR
+Place one puppy in every row, every column, and every colored region — and make sure no two puppies ever touch, not even diagonally. Every puzzle has exactly one solution, so it is always solvable with logic. No guessing required.
+
+HOW YOU PLAY
+Tap a square once to rule it out with an X, tap again to place a puppy, tap once more to clear it. Mark the squares you have eliminated to zero in on where each pup must go. Wrong spots light up so you always know where you stand.
 
 GROWS WITH YOU
-• Start on gentle 4×4 boards, then unlock 6×6 and 9×9 as you win
-• Four difficulties, from no-fail Puppy mode to a real Hard challenge
-• Every puzzle is guaranteed to have exactly one solution
+- Start on gentle 5x5 boards, then unlock 6x6, 7x7, 8x8 and 9x9 as you win
+- Bigger boards, more regions, deeper deductions
+- Undo, Clear, and hints whenever you want them
 
 A NEW PUZZLE EVERY DAY
-Come back daily for a fresh board — the same one for everyone — and build a streak. How many days in a row can you keep it going?
+Come back daily for a fresh board — the same one for everyone — and build a streak.
 
-HELPFUL, NOT STRESSFUL
-• Pencil notes to jot down your guesses
-• Hints when you're stuck
-• Undo, erase, and gentle mistake highlighting
-• Row, column, and matching-breed highlighting to guide your eye
-• A relaxed no-fail mode for kids and warm-ups
+FAIR AND FRIENDLY
+- One-tap Remove Ads, and NO surprise full-screen ads during play — ever
+- Optional hint packs, or watch an ad only if you choose to
+- Game Center leaderboards and achievements
+- iCloud sync across your devices, and full offline play
+- Colorblind-friendly labels and a relaxed, no-fail feel
 
-PLAY YOUR WAY
-• Colorblind-friendly labels
-• Sound and haptics you can toggle
-• Your progress syncs across your iPhone and iPad with iCloud
-• Game Center leaderboards and achievements
-• Plays offline — perfect for trips and waiting rooms
+Whether you have two minutes or twenty, Pupdoku is a calm, rewarding brain game with a happy ending every time: a board full of puppies. Download and start your pack today!
 
-Whether you're a sudoku pro chasing a fast 9×9 or just here for the puppies, Pupdoku is a warm little daily habit. Download and start your pack today! 🐶🐾
+## What's New  (version 2.0)
+A whole new game! Pupdoku is now "Find the Puppies" — a cozy logic-deduction puzzle.
 
-## What's New  (version 1.0)
-Welcome to Pupdoku — sudoku with puppies! 🐶
+- Place one puppy per row, column and color, with none touching
+- Five board sizes (5x5 to 9x9) that unlock as you play
+- Tap to mark, tap to place, deduce your way to the solution
+- New music and sound, Undo/Clear/Hint, and a fresh Daily Puzzle
+- Fair by design: no surprise ads during play, one-tap Remove Ads
 
-• Three grid sizes (4×4, 6×6, 9×9) with unlockable progression
-• Four difficulties, from relaxing Puppy mode to Hard
-• A fresh Daily Puzzle with streaks
-• Nine hand-illustrated breeds, notes, hints, and helpful highlighting
-• Game Center leaderboards & achievements, plus iCloud sync
-
-Thanks for playing — leave a review and tell us your favorite breed!
+Thanks for playing — tell us your favorite breed!
 
 ## URLs
 - Marketing URL: https://compo-cf.github.io/pupdoku/
@@ -66,11 +64,12 @@ Thanks for playing — leave a review and tell us your favorite breed!
 - Privacy Policy URL: https://compo-cf.github.io/pupdoku/privacy.html
 
 ## Copyright
-© 2026 Anthony Compofelice
+2026 Anthony Compofelice
 
 ## Notes
-- Keywords: don't repeat words already in the App Name or Subtitle (Apple indexes
-  those separately) — that's why "sudoku", "puppy", "puzzle", "cute", "dog(s)",
-  "logic", "cozy" are omitted from the keyword field.
-- Promotional Text can be changed anytime without a review; use it for seasonal
-  hooks or "New: 9×9 unlocked!" style messages later.
+- Name choice: "Pupdoku: Puppy Puzzles" is accurate (it is not sudoku). If you want the
+  sudoku search term anyway (Meowdoku itself uses "Sudoku without Numbers"), you could use
+  "Pupdoku: Puppy Sudoku" instead — slightly less accurate but higher search volume. Your call.
+- Keywords deliberately omit words already in the name/subtitle (puppy, puzzle, find, logic,
+  game, dog is kept as "dogs") since Apple indexes name + subtitle separately.
+- Promotional Text can change anytime without review — good place for seasonal hooks.
