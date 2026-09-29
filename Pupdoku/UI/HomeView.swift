@@ -90,7 +90,7 @@ struct HomeView: View {
             Text("Pupdoku")
                 .font(.system(size: 44, weight: .black, design: .rounded))
                 .foregroundStyle(Palette.ink)
-            Text("Sudoku, but make it puppies")
+            Text("Find the hidden puppies")
                 .font(.system(size: 14, weight: .semibold, design: .rounded))
                 .foregroundStyle(Palette.inkSoft)
         }
