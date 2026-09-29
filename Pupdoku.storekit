@@ -6,13 +6,7 @@
       "displayPrice" : "2.99",
       "familyShareable" : false,
       "internalID" : "PUP0001",
-      "localizations" : [
-        {
-          "description" : "Hide banner and interstitial ads forever.",
-          "displayName" : "Remove Ads",
-          "locale" : "en_US"
-        }
-      ],
+      "localizations" : [ { "description" : "Hide banner and interstitial ads forever.", "displayName" : "Remove Ads", "locale" : "en_US" } ],
       "productID" : "com.centricfiber.pupdoku.removeads",
       "referenceName" : "Remove Ads",
       "type" : "NonConsumable"
@@ -21,13 +15,7 @@
       "displayPrice" : "0.99",
       "familyShareable" : false,
       "internalID" : "PUP0002",
-      "localizations" : [
-        {
-          "description" : "Get 10 hints to reveal tricky cells.",
-          "displayName" : "10 Hints",
-          "locale" : "en_US"
-        }
-      ],
+      "localizations" : [ { "description" : "Get 10 hints to reveal tricky cells.", "displayName" : "10 Hints", "locale" : "en_US" } ],
       "productID" : "com.centricfiber.pupdoku.hints_small",
       "referenceName" : "10 Hints",
       "type" : "Consumable"
@@ -36,13 +24,7 @@
       "displayPrice" : "2.99",
       "familyShareable" : false,
       "internalID" : "PUP0003",
-      "localizations" : [
-        {
-          "description" : "Get 50 hints — best value.",
-          "displayName" : "50 Hints",
-          "locale" : "en_US"
-        }
-      ],
+      "localizations" : [ { "description" : "Get 50 hints - best value.", "displayName" : "50 Hints", "locale" : "en_US" } ],
       "productID" : "com.centricfiber.pupdoku.hints_large",
       "referenceName" : "50 Hints",
       "type" : "Consumable"
@@ -51,13 +33,7 @@
       "displayPrice" : "0.99",
       "familyShareable" : false,
       "internalID" : "PUP0004",
-      "localizations" : [
-        {
-          "description" : "Buy the developer a treat. 🐾",
-          "displayName" : "Small Tip",
-          "locale" : "en_US"
-        }
-      ],
+      "localizations" : [ { "description" : "Buy the developer a treat.", "displayName" : "Small Tip", "locale" : "en_US" } ],
       "productID" : "com.centricfiber.pupdoku.tip.small",
       "referenceName" : "Small Tip",
       "type" : "Consumable"
@@ -66,13 +42,7 @@
       "displayPrice" : "2.99",
       "familyShareable" : false,
       "internalID" : "PUP0005",
-      "localizations" : [
-        {
-          "description" : "A generous tip to support Pupdoku.",
-          "displayName" : "Medium Tip",
-          "locale" : "en_US"
-        }
-      ],
+      "localizations" : [ { "description" : "A generous tip to support Pupdoku.", "displayName" : "Medium Tip", "locale" : "en_US" } ],
       "productID" : "com.centricfiber.pupdoku.tip.medium",
       "referenceName" : "Medium Tip",
       "type" : "Consumable"
@@ -81,16 +51,73 @@
       "displayPrice" : "4.99",
       "familyShareable" : false,
       "internalID" : "PUP0006",
-      "localizations" : [
-        {
-          "description" : "A big-hearted tip. Thank you!",
-          "displayName" : "Big Tip",
-          "locale" : "en_US"
-        }
-      ],
+      "localizations" : [ { "description" : "A big-hearted tip. Thank you!", "displayName" : "Big Tip", "locale" : "en_US" } ],
       "productID" : "com.centricfiber.pupdoku.tip.large",
       "referenceName" : "Big Tip",
       "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "0.99",
+      "familyShareable" : false,
+      "internalID" : "PUP0007",
+      "localizations" : [ { "description" : "A small pouch of Bones.", "displayName" : "80 Bones", "locale" : "en_US" } ],
+      "productID" : "com.centricfiber.pupdoku.bones.80",
+      "referenceName" : "Bones 80",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "4.99",
+      "familyShareable" : false,
+      "internalID" : "PUP0008",
+      "localizations" : [ { "description" : "A bag of Bones.", "displayName" : "500 Bones", "locale" : "en_US" } ],
+      "productID" : "com.centricfiber.pupdoku.bones.500",
+      "referenceName" : "Bones 500",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "9.99",
+      "familyShareable" : false,
+      "internalID" : "PUP0009",
+      "localizations" : [ { "description" : "A big bag of Bones.", "displayName" : "1,200 Bones", "locale" : "en_US" } ],
+      "productID" : "com.centricfiber.pupdoku.bones.1200",
+      "referenceName" : "Bones 1200",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "19.99",
+      "familyShareable" : false,
+      "internalID" : "PUP0010",
+      "localizations" : [ { "description" : "A treasure chest of Bones - best value.", "displayName" : "2,800 Bones", "locale" : "en_US" } ],
+      "productID" : "com.centricfiber.pupdoku.bones.2800",
+      "referenceName" : "Bones 2800",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "1.99",
+      "familyShareable" : false,
+      "internalID" : "PUP0011",
+      "localizations" : [ { "description" : "600 Bones, Remove Ads, and the Midnight theme.", "displayName" : "Starter Pack", "locale" : "en_US" } ],
+      "productID" : "com.centricfiber.pupdoku.starterpack",
+      "referenceName" : "Starter Pack",
+      "type" : "NonConsumable"
+    },
+    {
+      "displayPrice" : "2.99",
+      "familyShareable" : false,
+      "internalID" : "PUP0012",
+      "localizations" : [ { "description" : "Unlock the Spooky theme and Halloween costumes.", "displayName" : "Spooky Pass 2026", "locale" : "en_US" } ],
+      "productID" : "com.centricfiber.pupdoku.eventpass.spooky2026",
+      "referenceName" : "Event Pass Spooky 2026",
+      "type" : "NonConsumable"
+    },
+    {
+      "displayPrice" : "2.99",
+      "familyShareable" : false,
+      "internalID" : "PUP0013",
+      "localizations" : [ { "description" : "Unlock the Winter theme and holiday costumes.", "displayName" : "Winter Pass 2026", "locale" : "en_US" } ],
+      "productID" : "com.centricfiber.pupdoku.eventpass.winter2026",
+      "referenceName" : "Event Pass Winter 2026",
+      "type" : "NonConsumable"
     }
   ],
   "settings" : {
@@ -102,9 +129,29 @@
     "_storefront" : "USA",
     "_storeKitErrors" : []
   },
-  "subscriptionGroups" : [],
-  "version" : {
-    "major" : 3,
-    "minor" : 0
-  }
+  "subscriptionGroups" : [
+    {
+      "id" : "21850001",
+      "localizations" : [],
+      "name" : "Pupdoku Parade Pass",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "2.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "PUPSUB01",
+          "introductoryOffer" : null,
+          "localizations" : [ { "description" : "Ad-free and unlimited hints while subscribed.", "displayName" : "Parade Pass", "locale" : "en_US" } ],
+          "productID" : "com.centricfiber.pupdoku.paradepass.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Parade Pass Monthly",
+          "subscriptionGroupID" : "21850001",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : { "major" : 3, "minor" : 0 }
 }
