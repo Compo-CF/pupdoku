@@ -128,7 +128,7 @@ struct GameView: View {
 
     private var appearance: BoardAppearance {
         BoardAppearance(highlightConflicts: store.state.highlightConflicts,
-                        colorblindLabels: store.state.colorblindLabels, regionColors: ThemeCatalog.theme(store.selectedThemeId).colors)
+                        colorblindLabels: store.state.colorblindLabels, regionColors: ThemeCatalog.theme(store.selectedThemeId).colors, costumeId: EventPassCatalog.all.first(where: { $0.themeId == store.selectedThemeId })?.costumeId)
     }
 
     private func tap(_ flat: Int, in session: QueensSession) {

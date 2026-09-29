@@ -4,6 +4,7 @@ struct BoardAppearance {
     var highlightConflicts: Bool
     var colorblindLabels: Bool
     var regionColors: [Color] = []
+    var costumeId: String? = nil
     /// Region fill from the active theme, falling back to the default palette.
     func color(_ i: Int) -> Color {
         regionColors.isEmpty ? Palette.region(i) : regionColors[i % regionColors.count]
@@ -11,8 +12,8 @@ struct BoardAppearance {
 }
 
 /// One cell of the board. Filled with its region color (from the active theme);
-/// shows an X when ruled out, or the region puppy when placed (red ring when
-/// conflicting). Tapping cycles the state.
+/// shows an X when ruled out, or the region puppy (with any event costume) when
+/// placed — red ring when conflicting. Tapping cycles the state.
 struct CellView: View {
     let session: QueensSession
     let flat: Int
@@ -37,7 +38,8 @@ struct CellView: View {
                     .foregroundStyle(Palette.ink.opacity(0.45))
             case .puppy:
                 BreedTokenView(breed: BreedCatalog.breed(forRegion: regionIndex),
-                               showCode: appearance.colorblindLabels)
+                               showCode: appearance.colorblindLabels,
+                               costume: appearance.costumeId)
                     .padding(2)
                     .overlay(
                         isConflict
