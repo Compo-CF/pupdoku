@@ -3,11 +3,16 @@ import SwiftUI
 struct BoardAppearance {
     var highlightConflicts: Bool
     var colorblindLabels: Bool
+    var regionColors: [Color] = []
+    /// Region fill from the active theme, falling back to the default palette.
+    func color(_ i: Int) -> Color {
+        regionColors.isEmpty ? Palette.region(i) : regionColors[i % regionColors.count]
+    }
 }
 
-/// One cell of the board. Filled with its region color; shows an ❌ when ruled
-/// out, or the region's puppy when placed (red ring when conflicting). Tapping
-/// cycles the state.
+/// One cell of the board. Filled with its region color (from the active theme);
+/// shows an X when ruled out, or the region puppy when placed (red ring when
+/// conflicting). Tapping cycles the state.
 struct CellView: View {
     let session: QueensSession
     let flat: Int
@@ -21,7 +26,7 @@ struct CellView: View {
 
     var body: some View {
         ZStack {
-            Rectangle().fill(Palette.region(regionIndex))
+            Rectangle().fill(appearance.color(regionIndex))
 
             switch state {
             case .empty:
@@ -30,7 +35,6 @@ struct CellView: View {
                 Image(systemName: "xmark")
                     .font(.system(size: 12, weight: .black))
                     .foregroundStyle(Palette.ink.opacity(0.45))
-                    .scaleEffect(1.0)
             case .puppy:
                 BreedTokenView(breed: BreedCatalog.breed(forRegion: regionIndex),
                                showCode: appearance.colorblindLabels)

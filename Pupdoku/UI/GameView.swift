@@ -76,6 +76,11 @@ struct GameView: View {
         .confirmationDialog("Out of hints", isPresented: $showHintOptions, titleVisibility: .visible) {
             Button(ads.rewardedReady ? "Watch an ad for a hint" : "Loading ad…") { watchRewardedHint() }
                 .disabled(!ads.rewardedReady)
+            if store.bones >= GameStore.hintBonesCost {
+                Button("Use \(GameStore.hintBonesCost) Bones 🦴") {
+                    if store.useHintWithBones() { haptics.assist(); sound.hint() }
+                }
+            }
             Button("Get more hints") { showShop = true }
             Button("Cancel", role: .cancel) {}
         } message: {
@@ -123,7 +128,7 @@ struct GameView: View {
 
     private var appearance: BoardAppearance {
         BoardAppearance(highlightConflicts: store.state.highlightConflicts,
-                        colorblindLabels: store.state.colorblindLabels)
+                        colorblindLabels: store.state.colorblindLabels, regionColors: ThemeCatalog.theme(store.selectedThemeId).colors)
     }
 
     private func tap(_ flat: Int, in session: QueensSession) {
