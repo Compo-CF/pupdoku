@@ -43,7 +43,9 @@ struct PupdokuApp: App {
                     store.applyLaunch()
                     await iap.start()
                     store.setRemoveAdsOwned(iap.removeAdsOwned)
-                    ads.configure(removeAdsOwned: iap.removeAdsOwned)
+                    store.subscriptionActive = iap.subscriptionActive
+                    store.reconcileEventPasses(iap.restoredEventPasses)
+                    ads.configure(removeAdsOwned: iap.removeAdsOwned || iap.subscriptionActive)
                     gameCenter.authenticate()
                     await syncFromCloudIfNeeded()
                     await gameCenter.report(state: store.state)
@@ -56,13 +58,31 @@ struct PupdokuApp: App {
                     await requestTrackingPermissionIfNeeded()
                 }
                 .onChange(of: iap.removeAdsOwned) { _, owned in
-                    ads.configure(removeAdsOwned: owned)
+                    ads.configure(removeAdsOwned: owned || iap.subscriptionActive)
                     store.setRemoveAdsOwned(owned)
+                }
+                .onChange(of: iap.subscriptionActive) { _, active in
+                    store.subscriptionActive = active
+                    ads.configure(removeAdsOwned: iap.removeAdsOwned || active)
                 }
                 .onChange(of: iap.pendingHintGrant) { _, grant in
                     guard grant > 0 else { return }
-                    store.grantHints(grant)
-                    iap.pendingHintGrant = 0
+                    store.grantHints(grant); iap.pendingHintGrant = 0
+                }
+                .onChange(of: iap.pendingBonesGrant) { _, b in
+                    guard b > 0 else { return }
+                    store.addBones(b); iap.pendingBonesGrant = 0
+                }
+                .onChange(of: iap.pendingStarterPack) { _, flag in
+                    guard flag else { return }
+                    store.applyStarterPack(); iap.pendingStarterPack = false
+                }
+                .onChange(of: iap.pendingEventPassUnlock) { _, pid in
+                    guard let pid else { return }
+                    store.unlockEventPass(productId: pid); iap.pendingEventPassUnlock = nil
+                }
+                .onChange(of: iap.restoredEventPasses) { _, passes in
+                    store.reconcileEventPasses(passes)
                 }
                 .onChange(of: store.state.hapticsOn) { _, on in haptics.isEnabled = on }
                 .onChange(of: store.state.soundOn) { _, on in sound.isEnabled = on }

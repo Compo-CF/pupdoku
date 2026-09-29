@@ -1,20 +1,18 @@
 import Foundation
 
 /// The full persisted player state: progression, stats, streaks, entitlements,
-/// settings, and unlocked achievements. Encoded to one JSON file by
-/// `Persistence` and mirrored to CloudKit by `CloudSync`.
+/// the Bones economy (v3.0), settings, and unlocked achievements. Encoded to one
+/// JSON file by Persistence and mirrored to CloudKit by CloudSync.
 struct GameState: Codable, Equatable {
 
     // MARK: - Progression & stats
-    /// Wins keyed by difficulty raw value ("0"..."4"). Drives size unlocks.
     var winsByDifficulty: [Int: Int] = [:]
-    /// Best (lowest) completion time keyed by difficulty raw value.
     var bestTimes: [String: TimeInterval] = [:]
 
     var totalWins: Int = 0
     var totalHintsUsed: Int = 0
     var totalMistakes: Int = 0
-    var perfectWins: Int = 0          // no mistakes, no hints
+    var perfectWins: Int = 0
     var totalPlaySeconds: TimeInterval = 0
 
     // MARK: - Streaks (Daily Puzzle)
@@ -26,6 +24,14 @@ struct GameState: Codable, Equatable {
     var removeAdsOwned: Bool = false
     var hintBalance: Int = 3
 
+    // MARK: - Bones economy (v3.0)
+    var bones: Int = 0
+    var ownedThemes: Set<String> = ["classic"]
+    var selectedTheme: String = "classic"
+    var ownedEventPasses: Set<String> = []
+    /// Bones awarded by the most recent win (for the win screen).
+    var lastWinBones: Int = 0
+
     // MARK: - Achievements
     var unlockedAchievements: Set<String> = []
 
@@ -33,10 +39,10 @@ struct GameState: Codable, Equatable {
     var soundOn: Bool = true
     var musicOn: Bool = true
     var hapticsOn: Bool = true
-    var highlightConflicts: Bool = true   // paint conflicting puppies red
+    var highlightConflicts: Bool = true
     var showTimer: Bool = true
     var showMistakeCounter: Bool = true
-    var colorblindLabels: Bool = false    // show 2-letter breed codes on puppies
+    var colorblindLabels: Bool = false
 
     // MARK: - Housekeeping
     var hasSeenOnboarding: Bool = false
@@ -49,7 +55,6 @@ struct GameState: Codable, Equatable {
 
     func wins(for difficulty: Difficulty) -> Int { winsByDifficulty[difficulty.rawValue] ?? 0 }
 
-    /// Puppy (5×5) always open; each larger size opens after 3 wins on the previous.
     func isUnlocked(_ difficulty: Difficulty) -> Bool {
         guard let prev = difficulty.previous else { return true }
         return wins(for: prev) >= Self.winsToUnlockNext
@@ -61,6 +66,15 @@ struct GameState: Codable, Equatable {
     }
 
     func bestTime(for spec: PuzzleSpec) -> TimeInterval? { bestTimes[spec.key] }
+
+    // MARK: - Bones earning
+    /// Bones awarded for solving a board: base + size bonus + perfect bonus.
+    static func bonesForWin(spec: PuzzleSpec, mistakes: Int, hintsUsed: Int, isDaily: Bool) -> Int {
+        var b = 10 + spec.difficulty.rawValue * 5       // 10..30 by size
+        if mistakes == 0 && hintsUsed == 0 { b += 10 }  // perfect bonus
+        if isDaily { b += 15 }                          // daily bonus
+        return b
+    }
 
     // MARK: - Recording a win
     @discardableResult
@@ -79,6 +93,10 @@ struct GameState: Codable, Equatable {
 
         if let prev = bestTimes[spec.key] { if elapsed < prev { bestTimes[spec.key] = elapsed } }
         else { bestTimes[spec.key] = elapsed }
+
+        let earned = Self.bonesForWin(spec: spec, mistakes: mistakes, hintsUsed: hintsUsed, isDaily: isDaily)
+        bones += earned
+        lastWinBones = earned
 
         if isDaily { recordDailyCompletion(todayEpochDay: todayEpochDay) }
         savedGame = nil
@@ -100,6 +118,5 @@ struct GameState: Codable, Equatable {
 }
 
 extension Date {
-    /// Days since the Unix epoch in UTC — a stable per-day bucket for streaks + daily seed.
     var epochDayUTC: Int { Int((timeIntervalSince1970 / 86400).rounded(.down)) }
 }

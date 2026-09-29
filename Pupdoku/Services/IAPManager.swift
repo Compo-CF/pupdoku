@@ -2,82 +2,92 @@ import Foundation
 import Observation
 import StoreKit
 
-/// StoreKit 2 wrapper covering Pupdoku's in-app purchases:
-/// - One non-consumable: `removeads`
-/// - Two consumable hint packs: `hints_small` (+10), `hints_large` (+50)
-/// - Three consumable tips: tip.small / tip.medium / tip.large
+/// StoreKit 2 wrapper for Pupdoku v3.0 (mirrors Critter Conga):
+/// - Non-consumables: removeads, starterpack, eventpass.spooky2026, eventpass.winter2026
+/// - Consumables: bones.80/500/1200/2800, hints_small/large, tip.small/medium/large
+/// - Auto-renewable subscription: paradepass.monthly (ad-free + unlimited hints)
 ///
-/// Hint packs report how many hints to credit via `hintGrant(for:)`; the caller
-/// (ShopView / GameStore) applies the grant once the transaction verifies.
-///
-/// The tip-reminder cadence mirrors Cosmica / S-Tier Eats: never in the first
-/// 14 days after install, at most once every 60 days, never after any tip, plus
-/// a hard "Don't ask again" opt-out.
+/// Grants the economy must apply are surfaced as pending* values the caller consumes
+/// (GameStore via PupdokuApp.onChange). Entitlements (removeAdsOwned,
+/// subscriptionActive, owned event passes) are recomputed from
+/// Transaction.currentEntitlements on launch, purchase, and restore.
 @MainActor
 @Observable
 final class IAPManager {
-    // MARK: - Product IDs (must match App Store Connect)
-    static let removeAdsProductId    = "com.centricfiber.pupdoku.removeads"
-    static let hintsSmallProductId   = "com.centricfiber.pupdoku.hints_small"
-    static let hintsLargeProductId   = "com.centricfiber.pupdoku.hints_large"
+    private static let p = "com.centricfiber.pupdoku."
 
-    static let tipSmallProductId     = "com.centricfiber.pupdoku.tip.small"
-    static let tipMediumProductId    = "com.centricfiber.pupdoku.tip.medium"
-    static let tipLargeProductId     = "com.centricfiber.pupdoku.tip.large"
+    static let removeAdsProductId  = p + "removeads"
+    static let hintsSmallProductId = p + "hints_small"
+    static let hintsLargeProductId = p + "hints_large"
+    static let tipSmallProductId   = p + "tip.small"
+    static let tipMediumProductId  = p + "tip.medium"
+    static let tipLargeProductId   = p + "tip.large"
+    static let tipProductIds = [tipSmallProductId, tipMediumProductId, tipLargeProductId]
 
-    static let tipProductIds: [String] = [tipSmallProductId, tipMediumProductId, tipLargeProductId]
+    static let bones80  = p + "bones.80"
+    static let bones500 = p + "bones.500"
+    static let bones1200 = p + "bones.1200"
+    static let bones2800 = p + "bones.2800"
+    static let boneProductIds = [bones80, bones500, bones1200, bones2800]
 
-    static let allProductIds: [String] = [
-        removeAdsProductId, hintsSmallProductId, hintsLargeProductId,
-    ] + tipProductIds
+    static let starterPackProductId = p + "starterpack"
+    static let eventSpookyProductId = p + "eventpass.spooky2026"
+    static let eventWinterProductId = p + "eventpass.winter2026"
+    static let eventPassProductIds = [eventSpookyProductId, eventWinterProductId]
+    static let paradePassMonthly    = p + "paradepass.monthly"
 
-    static let consumableIds: Set<String> = [
-        hintsSmallProductId, hintsLargeProductId,
-        tipSmallProductId, tipMediumProductId, tipLargeProductId,
-    ]
+    static let allProductIds: [String] =
+        [removeAdsProductId, hintsSmallProductId, hintsLargeProductId,
+         starterPackProductId, paradePassMonthly]
+        + boneProductIds + eventPassProductIds + tipProductIds
 
-    /// How many hints a purchased pack credits.
-    static func hintGrant(for productId: String) -> Int {
-        switch productId {
-        case hintsSmallProductId: return 10
-        case hintsLargeProductId: return 50
+    static let consumableIds: Set<String> = Set(boneProductIds + [hintsSmallProductId, hintsLargeProductId] + tipProductIds)
+
+    static func hintGrant(for id: String) -> Int {
+        id == hintsSmallProductId ? 10 : (id == hintsLargeProductId ? 50 : 0)
+    }
+    static func bonesGrant(for id: String) -> Int {
+        switch id {
+        case bones80: return 80
+        case bones500: return 500
+        case bones1200: return 1200
+        case bones2800: return 2800
         default: return 0
         }
     }
 
-    // MARK: - Tip reminder cadence
+    // MARK: - State
+    var products: [Product] = []
+    var removeAdsOwned = false
+    var subscriptionActive = false
+    var restoredEventPasses: Set<String> = []
+    var purchaseInFlight = false
+    var lastError: String?
+
+    var pendingHintGrant = 0
+    var pendingBonesGrant = 0
+    var pendingStarterPack = false
+    var pendingEventPassUnlock: String?
+
     private let hasEverTippedKey  = "pupdoku.iap.hasEverTipped"
     private let tipNeverAskKey    = "pupdoku.tip.neverAsk"
     private let tipLastPromptKey  = "pupdoku.tip.lastPromptAt"
     private let tipInstallDateKey = "pupdoku.tip.firstSeenAt"
     private let graceDays: Double = 14
     private let betweenPromptDays: Double = 60
-
-    // MARK: - State
-    var products: [Product] = []
-    var removeAdsOwned: Bool = false
-    var purchaseInFlight: Bool = false
-    var didTip: Bool = false
-    private(set) var hasEverTipped: Bool = false
-    var lastError: String?
-
-    /// Set by `purchase` to the hint count a just-completed pack purchase should
-    /// credit. The caller reads and clears it. 0 when the last purchase wasn't a pack.
-    var pendingHintGrant: Int = 0
+    private(set) var hasEverTipped = false
+    var didTip = false
 
     private var updatesTask: Task<Void, Never>?
 
     // MARK: - Lookups
     func product(for id: String) -> Product? { products.first { $0.id == id } }
+    func displayPrice(for id: String) -> String? { product(for: id)?.displayPrice }
     var removeAdsProduct: Product? { product(for: Self.removeAdsProductId) }
-    var hintPackProducts: [Product] {
-        products.filter { $0.id == Self.hintsSmallProductId || $0.id == Self.hintsLargeProductId }
-            .sorted { $0.price < $1.price }
-    }
-    var tipProducts: [Product] {
-        products.filter { Self.tipProductIds.contains($0.id) }.sorted { $0.price < $1.price }
-    }
-    func displayPrice(for productId: String) -> String? { product(for: productId)?.displayPrice }
+    var paradePassProduct: Product? { product(for: Self.paradePassMonthly) }
+    var boneProducts: [Product] { Self.boneProductIds.compactMap { product(for: $0) } }
+    var hintPackProducts: [Product] { [Self.hintsSmallProductId, Self.hintsLargeProductId].compactMap { product(for: $0) } }
+    var tipProducts: [Product] { products.filter { Self.tipProductIds.contains($0.id) }.sorted { $0.price < $1.price } }
 
     // MARK: - Lifecycle
     func start() async {
@@ -92,51 +102,42 @@ final class IAPManager {
     }
 
     func loadProducts() async {
-        do {
-            products = try await Product.products(for: Self.allProductIds)
-        } catch {
-            lastError = "Couldn't load products: \(error.localizedDescription)"
-        }
+        do { products = try await Product.products(for: Self.allProductIds) }
+        catch { lastError = "Could not load products: \(error.localizedDescription)" }
     }
 
-    // MARK: - Purchases
-
-    /// Purchases a product. Returns `true` on a verified success. For hint packs,
-    /// sets `pendingHintGrant` for the caller to consume.
+    // MARK: - Purchase
     @discardableResult
     func purchase(_ productId: String) async -> Bool {
-        guard let product = product(for: productId) else {
-            lastError = "Product unavailable: \(productId)"
-            return false
-        }
+        guard let product = product(for: productId) else { lastError = "Product unavailable: \(productId)"; return false }
         purchaseInFlight = true
         defer { purchaseInFlight = false }
-
         do {
             let result = try await product.purchase()
             switch result {
             case .success(let verification):
-                guard case .verified(let txn) = verification else {
-                    lastError = "Purchase couldn't be verified."
-                    return false
-                }
-                if productId == Self.removeAdsProductId { removeAdsOwned = true }
-                let grant = Self.hintGrant(for: productId)
-                if grant > 0 { pendingHintGrant = grant }
-                if Self.tipProductIds.contains(productId) { markTipped() }
+                guard case .verified(let txn) = verification else { lastError = "Purchase could not be verified."; return false }
+                applyPurchase(productId)
                 await txn.finish()
+                await refreshEntitlements()
                 return true
-            case .userCancelled:
-                return false
-            case .pending:
-                lastError = "Purchase pending — check back after it clears."
-                return false
-            @unknown default:
-                return false
+            case .userCancelled: return false
+            case .pending: lastError = "Purchase pending — check back after it clears."; return false
+            @unknown default: return false
             }
-        } catch {
-            lastError = "Purchase failed: \(error.localizedDescription)"
-            return false
+        } catch { lastError = "Purchase failed: \(error.localizedDescription)"; return false }
+    }
+
+    private func applyPurchase(_ productId: String) {
+        switch productId {
+        case Self.removeAdsProductId: removeAdsOwned = true
+        case Self.starterPackProductId: pendingStarterPack = true; removeAdsOwned = true
+        case Self.eventSpookyProductId, Self.eventWinterProductId:
+            pendingEventPassUnlock = productId; restoredEventPasses.insert(productId)
+        default:
+            let h = Self.hintGrant(for: productId); if h > 0 { pendingHintGrant += h }
+            let b = Self.bonesGrant(for: productId); if b > 0 { pendingBonesGrant += b }
+            if Self.tipProductIds.contains(productId) { markTipped() }
         }
     }
 
@@ -144,61 +145,50 @@ final class IAPManager {
     func purchaseTip(_ product: Product) async -> Bool { await purchase(product.id) }
 
     func restore() async {
-        do { try await AppStore.sync() }
-        catch { lastError = "Restore failed: \(error.localizedDescription)" }
+        do { try await AppStore.sync() } catch { lastError = "Restore failed: \(error.localizedDescription)" }
         await refreshEntitlements()
     }
 
     private func refreshEntitlements() async {
-        var owned = false
+        var ads = false, sub = false
+        var passes: Set<String> = []
         for await result in Transaction.currentEntitlements {
-            if case .verified(let txn) = result, txn.productID == Self.removeAdsProductId {
-                owned = true
-                break
+            guard case .verified(let txn) = result else { continue }
+            switch txn.productID {
+            case Self.removeAdsProductId, Self.starterPackProductId: ads = true
+            case Self.paradePassMonthly: sub = true
+            case Self.eventSpookyProductId, Self.eventWinterProductId: passes.insert(txn.productID)
+            default: break
             }
         }
-        removeAdsOwned = owned
+        removeAdsOwned = ads
+        subscriptionActive = sub
+        restoredEventPasses = passes
     }
 
     private func listenForTransactions() -> Task<Void, Never> {
         Task.detached { [weak self] in
             for await update in Transaction.updates {
                 guard let self else { break }
-                if case .verified(let txn) = update {
-                    await self.refreshEntitlements()
-                    await txn.finish()
-                }
+                if case .verified(let txn) = update { await self.refreshEntitlements(); await txn.finish() }
             }
         }
     }
 
-    // MARK: - Tip reminder gating
-
+    // MARK: - Tip gating
     var tipReminderEligible: Bool {
         let d = UserDefaults.standard
-        guard !d.bool(forKey: tipNeverAskKey),
-              !hasEverTipped,
-              !tipProducts.isEmpty,
-              !purchaseInFlight
-        else { return false }
+        guard !d.bool(forKey: tipNeverAskKey), !hasEverTipped, !tipProducts.isEmpty, !purchaseInFlight else { return false }
         let now = Date().timeIntervalSince1970
         let firstSeen = d.double(forKey: tipInstallDateKey)
         guard firstSeen > 0, now - firstSeen >= graceDays * 86400 else { return false }
         let last = d.double(forKey: tipLastPromptKey)
         return last == 0 ? true : (now - last >= betweenPromptDays * 86400)
     }
-
-    func recordTipPromptShown() {
-        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: tipLastPromptKey)
-    }
-
-    func stopTipReminders() {
-        UserDefaults.standard.set(true, forKey: tipNeverAskKey)
-    }
-
+    func recordTipPromptShown() { UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: tipLastPromptKey) }
+    func stopTipReminders() { UserDefaults.standard.set(true, forKey: tipNeverAskKey) }
     private func markTipped() {
-        didTip = true
-        hasEverTipped = true
+        didTip = true; hasEverTipped = true
         UserDefaults.standard.set(true, forKey: hasEverTippedKey)
     }
 }

@@ -1,9 +1,8 @@
 import Foundation
 import Observation
 
-/// App-level coordinator: owns the persisted `GameState`, the active
-/// `QueensSession`, and every transition that must also touch persistence
-/// (start/resume, win, hints, settings).
+/// App-level coordinator: owns the persisted GameState, the active QueensSession,
+/// the Bones economy, and every transition that also touches persistence.
 @MainActor
 @Observable
 final class GameStore {
@@ -14,6 +13,12 @@ final class GameStore {
     private(set) var isGenerating = false
     private(set) var isDaily = false
     private(set) var lastUnlockedAchievements: [String] = []
+
+    /// Mirrors IAPManager.subscriptionActive (Parade Pass): unlimited hints + ad-free.
+    var subscriptionActive = false
+
+    /// Cost in Bones to reveal one hint (when not subscribed / out of free hints).
+    static let hintBonesCost = 15
 
     init(state: GameState, persistence: Persistence) {
         self.state = state
@@ -31,9 +36,7 @@ final class GameStore {
 
     // MARK: - Starting games
     func startNewGame(spec: PuzzleSpec) async {
-        isDaily = false
-        isGenerating = true
-        state.savedGame = nil
+        isDaily = false; isGenerating = true; state.savedGame = nil
         let seed = UInt64.random(in: 1...UInt64.max)
         let puzzle = await Self.generate(spec: spec, seed: seed)
         session = QueensSession(puzzle: puzzle)
@@ -41,8 +44,7 @@ final class GameStore {
     }
 
     func startDaily() async {
-        isDaily = true
-        isGenerating = true
+        isDaily = true; isGenerating = true
         let today = Date()
         if let saved = state.savedGame,
            saved.puzzle.seed == SeededRNG.dailySeed(for: today),
@@ -63,82 +65,111 @@ final class GameStore {
 
     func stashCurrentGame() {
         guard let session, session.status == .playing else { return }
-        state.savedGame = session.snapshot()
-        save()
+        state.savedGame = session.snapshot(); save()
     }
 
-    func abandonCurrentGame() {
-        session = nil
-        state.savedGame = nil
-        save()
-    }
+    func abandonCurrentGame() { session = nil; state.savedGame = nil; save() }
 
     // MARK: - Win
     @discardableResult
     func recordWinFromSession() -> [String] {
         guard let session, session.status == .won else { return [] }
         let unlocked = state.recordWin(
-            spec: session.puzzle.spec,
-            elapsed: session.elapsed,
-            mistakes: session.mistakes,
-            hintsUsed: session.hintsUsed,
-            isDaily: isDaily,
-            todayEpochDay: Date().epochDayUTC
-        )
+            spec: session.puzzle.spec, elapsed: session.elapsed,
+            mistakes: session.mistakes, hintsUsed: session.hintsUsed,
+            isDaily: isDaily, todayEpochDay: Date().epochDayUTC)
         lastUnlockedAchievements = unlocked
         save()
         return unlocked
     }
 
-    // MARK: - Hints
+    /// Bones earned by the most recent win (for the win screen).
+    var lastWinBones: Int { state.lastWinBones }
+
+    // MARK: - Hints (subscription -> free, then hint balance, then Bones)
     var hintBalance: Int { state.hintBalance }
+    var canRevealHintFree: Bool { subscriptionActive || state.hintBalance > 0 }
 
     @discardableResult
     func useHintFromBalance() -> Bool {
-        guard let session, state.hintBalance > 0 else { return false }
+        guard let session else { return false }
+        if subscriptionActive { return session.useHint() }
+        guard state.hintBalance > 0 else { return false }
         guard session.useHint() else { return false }
-        state.hintBalance -= 1
-        save()
-        return true
-    }
-
-    func grantHints(_ n: Int) {
-        guard n > 0 else { return }
-        state.hintBalance += n
-        save()
+        state.hintBalance -= 1; save(); return true
     }
 
     @discardableResult
-    func revealWithRewardedHint() -> Bool {
-        grantHints(1)
-        return useHintFromBalance()
+    func useHintWithBones() -> Bool {
+        guard let session, state.bones >= Self.hintBonesCost else { return false }
+        guard session.useHint() else { return false }
+        state.bones -= Self.hintBonesCost; save(); return true
     }
 
-    // MARK: - Entitlements & settings
-    func setRemoveAdsOwned(_ owned: Bool) {
-        guard state.removeAdsOwned != owned else { return }
-        state.removeAdsOwned = owned
+    func grantHints(_ n: Int) { guard n > 0 else { return }; state.hintBalance += n; save() }
+
+    @discardableResult
+    func revealWithRewardedHint() -> Bool { grantHints(1); return useHintFromBalance() }
+
+    // MARK: - Bones economy
+    var bones: Int { state.bones }
+    func addBones(_ n: Int) { guard n > 0 else { return }; state.bones += n; save() }
+    @discardableResult
+    func spendBones(_ n: Int) -> Bool { guard state.bones >= n else { return false }; state.bones -= n; save(); return true }
+
+    // MARK: - Cosmetics (themes)
+    var selectedThemeId: String { state.selectedTheme }
+    func ownsTheme(_ id: String) -> Bool { state.ownedThemes.contains(id) }
+    @discardableResult
+    func buyTheme(_ theme: BoardTheme) -> Bool {
+        if state.ownedThemes.contains(theme.id) { return true }
+        guard theme.priceBones > 0, spendBones(theme.priceBones) else { return false }
+        state.ownedThemes.insert(theme.id); save(); return true
+    }
+    func selectTheme(_ id: String) { guard state.ownedThemes.contains(id) else { return }; state.selectedTheme = id; save() }
+
+    // MARK: - Event passes
+    func ownsEventPass(_ id: String) -> Bool { state.ownedEventPasses.contains(id) }
+    func unlockEventPass(productId: String) {
+        guard let pass = EventPassCatalog.byProduct(productId) else { return }
+        state.ownedEventPasses.insert(pass.id); state.ownedThemes.insert(pass.themeId); save()
+    }
+    @discardableResult
+    func buyEventPassWithBones(_ pass: EventPass) -> Bool {
+        if state.ownedEventPasses.contains(pass.id) { return true }
+        guard spendBones(pass.bonesPrice) else { return false }
+        state.ownedEventPasses.insert(pass.id); state.ownedThemes.insert(pass.themeId); save(); return true
+    }
+    func reconcileEventPasses(_ productIds: Set<String>) {
+        for pid in productIds { if let pass = EventPassCatalog.byProduct(pid) {
+            state.ownedEventPasses.insert(pass.id); state.ownedThemes.insert(pass.themeId)
+        } }
         save()
     }
 
-    func updateSettings(_ mutate: (inout GameState) -> Void) { mutate(&state); save() }
+    // MARK: - Starter Pack
+    func applyStarterPack() {
+        state.bones += 600
+        state.ownedThemes.insert("midnight")
+        save()
+    }
 
+    // MARK: - Entitlements & settings
+    func setRemoveAdsOwned(_ owned: Bool) { guard state.removeAdsOwned != owned else { return }; state.removeAdsOwned = owned; save() }
+    func updateSettings(_ mutate: (inout GameState) -> Void) { mutate(&state); save() }
     func markOnboardingSeen() { state.hasSeenOnboarding = true; save() }
 
     func resetProgress() {
         var fresh = GameState()
         fresh.hasSeenOnboarding = true
         fresh.removeAdsOwned = state.removeAdsOwned
-        fresh.soundOn = state.soundOn
-        fresh.musicOn = state.musicOn
-        fresh.hapticsOn = state.hapticsOn
+        fresh.ownedEventPasses = state.ownedEventPasses   // IAP-owned, keep
+        for id in state.ownedEventPasses { if let pass = EventPassCatalog.pass(id) { fresh.ownedThemes.insert(pass.themeId) } }
+        fresh.soundOn = state.soundOn; fresh.musicOn = state.musicOn; fresh.hapticsOn = state.hapticsOn
         fresh.highlightConflicts = state.highlightConflicts
-        fresh.showTimer = state.showTimer
-        fresh.showMistakeCounter = state.showMistakeCounter
+        fresh.showTimer = state.showTimer; fresh.showMistakeCounter = state.showMistakeCounter
         fresh.colorblindLabels = state.colorblindLabels
-        session = nil
-        state = fresh
-        save()
+        session = nil; state = fresh; save()
     }
 
     func replaceState(_ new: GameState) { state = new; save() }
