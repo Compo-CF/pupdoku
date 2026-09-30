@@ -54,6 +54,9 @@ FAIR AND FRIENDLY
 
 Whether you have two minutes or twenty, Pupdoku is a calm, rewarding brain game with a happy ending every time: a board full of puppies. Download and start your pack today!
 
+Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+Privacy Policy: https://compo-cf.github.io/pupdoku/privacy.html
+
 ## What's New (Version 3.0)
 Pupdoku just got a whole lot more to love!
 
