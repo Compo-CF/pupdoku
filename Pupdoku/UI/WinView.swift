@@ -9,6 +9,7 @@ struct WinView: View {
     let mistakes: Int
     let hintsUsed: Int
     let isDaily: Bool
+    let bonesEarned: Int
     let bestTime: TimeInterval?
     let newlyUnlocked: [String]
     let onPlayAgain: () -> Void
@@ -39,6 +40,17 @@ struct WinView: View {
             Text(isDaily ? "Daily Done!" : "Good Dog!")
                 .font(.system(size: 32, weight: .black, design: .rounded))
                 .foregroundStyle(Palette.ink)
+
+            if bonesEarned > 0 {
+                Text("🦴 +\(bonesEarned) Bones")
+                    .font(.system(size: 16, weight: .heavy, design: .rounded))
+                    .foregroundStyle(Palette.ink)
+                    .padding(.horizontal, 18).padding(.vertical, 9)
+                    .background(Palette.card, in: Capsule())
+                    .shadow(color: .black.opacity(0.08), radius: 8, y: 3)
+                    .scaleEffect(pop ? 1 : 0.6)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.55).delay(0.1), value: pop)
+            }
 
             VStack(spacing: 10) {
                 statRow("Time", formatClock(elapsed), highlight: isNewBest ? "New best!" : nil)

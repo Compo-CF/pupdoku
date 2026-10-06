@@ -32,7 +32,9 @@ struct DifficultySelectView: View {
             if unlocked { onStart(spec) }
         } label: {
             HStack(spacing: 14) {
-                Text(d.emoji).font(.system(size: 28))
+                MiniBoardPreview(n: d.n, themeId: store.selectedThemeId)
+                    .frame(width: 44, height: 44)
+                    .opacity(unlocked ? 1 : 0.7)
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
                         Text(d.sizeLabel).font(.system(size: 18, weight: .heavy, design: .rounded))
@@ -68,5 +70,33 @@ struct DifficultySelectView: View {
         }
         .buttonStyle(.plain)
         .disabled(!unlocked)
+    }
+}
+
+/// A small, brown-framed swatch of an n×n board in the active theme's colors — a
+/// quick visual cue for the board size next to each tier.
+struct MiniBoardPreview: View {
+    let n: Int
+    let themeId: String
+
+    private var colors: [Color] { ThemeCatalog.theme(themeId).colors }
+
+    var body: some View {
+        GeometryReader { geo in
+            let cell = geo.size.width / CGFloat(n)
+            ZStack(alignment: .topLeading) {
+                ForEach(0..<n, id: \.self) { r in
+                    ForEach(0..<n, id: \.self) { c in
+                        Rectangle()
+                            .fill(colors[(r + c) % colors.count])
+                            .frame(width: cell, height: cell)
+                            .position(x: cell * CGFloat(c) + cell / 2, y: cell * CGFloat(r) + cell / 2)
+                    }
+                }
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).stroke(Palette.lineBold, lineWidth: 2))
+        .shadow(color: .black.opacity(0.06), radius: 3, y: 1)
     }
 }

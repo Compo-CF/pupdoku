@@ -48,9 +48,14 @@ struct GameView: View {
             )
             .padding(.horizontal, 16)
 
+            // Fills the space beneath the board: a Parade Pass upsell for free
+            // players, or a Bones/streak/progress strip for subscribers. No banner
+            // over the board — reviews dislike ads around active play.
+            SmartStripView(difficulty: session.difficulty) { showShop = true }
+                .padding(.horizontal, 16)
+                .padding(.top, 2)
+
             Spacer(minLength: 0)
-            // No banner over the board. Reviews accept bottom banners on menus but
-            // dislike ads around active play, so Home carries the banner instead.
         }
         .pupBackground()
         .navigationBarBackButtonHidden(true)
@@ -66,6 +71,7 @@ struct GameView: View {
                 mistakes: session.mistakes,
                 hintsUsed: session.hintsUsed,
                 isDaily: store.isDaily,
+                bonesEarned: store.lastWinBones,
                 bestTime: store.state.bestTime(for: session.puzzle.spec),
                 newlyUnlocked: store.lastUnlockedAchievements,
                 onPlayAgain: { Task { await playAgain(session.puzzle.spec) } },

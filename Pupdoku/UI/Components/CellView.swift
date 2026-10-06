@@ -27,7 +27,13 @@ struct CellView: View {
 
     var body: some View {
         ZStack {
+            // Region fill, with a soft top-highlight → bottom-shadow so each cell
+            // reads as a gently raised tile rather than a flat square.
             Rectangle().fill(appearance.color(regionIndex))
+                .overlay(
+                    LinearGradient(colors: [.white.opacity(0.28), .clear, .black.opacity(0.07)],
+                                   startPoint: .top, endPoint: .bottom)
+                )
 
             switch state {
             case .empty:

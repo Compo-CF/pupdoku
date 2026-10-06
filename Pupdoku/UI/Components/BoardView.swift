@@ -9,9 +9,12 @@ struct BoardView: View {
 
     private var n: Int { session.n }
 
+    private let pad: CGFloat = 8   // white gutter between the brown frame and the grid
+
     var body: some View {
         GeometryReader { geo in
-            let side = min(geo.size.width, geo.size.height)
+            let card = min(geo.size.width, geo.size.height)
+            let side = card - pad * 2
             let cell = side / CGFloat(n)
             ZStack(alignment: .topLeading) {
                 ForEach(0..<n, id: \.self) { row in
@@ -28,8 +31,12 @@ struct BoardView: View {
                     .frame(width: side, height: side)
             }
             .frame(width: side, height: side)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Palette.lineBold, lineWidth: 3))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            // White card the grid sits inside, with the bold brown frame around it.
+            .padding(pad)
+            .background(Palette.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).stroke(Palette.lineBold, lineWidth: 3))
+            .shadow(color: .black.opacity(0.12), radius: 14, x: 0, y: 8)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }
         .aspectRatio(1, contentMode: .fit)

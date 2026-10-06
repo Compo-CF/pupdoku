@@ -49,9 +49,16 @@ struct HomeView: View {
                 Spacer(minLength: 8)
                 utilityRow
                     .padding(.horizontal, 24)
+
+                if !iap.subscriptionActive {
+                    paradeStrip
+                        .padding(.horizontal, 24)
+                }
+
                 BannerAdSlot()
             }
             .pupBackground()
+            .overlay(alignment: .topTrailing) { bonesPill.padding(.trailing, 20).padding(.top, 8) }
 
             if isStarting {
                 Color.black.opacity(0.15).ignoresSafeArea()
@@ -83,10 +90,47 @@ struct HomeView: View {
 
     // MARK: - Pieces
 
+    private var bonesPill: some View {
+        Button { haptics.select(); activeSheet = .shop } label: {
+            Text("🦴 \(store.bones)")
+                .font(.system(size: 14, weight: .heavy, design: .rounded))
+                .foregroundStyle(Palette.ink)
+                .padding(.horizontal, 13).padding(.vertical, 6)
+                .background(Palette.card, in: Capsule())
+                .shadow(color: .black.opacity(0.10), radius: 6, y: 2)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var paradeStrip: some View {
+        Button { haptics.select(); activeSheet = .shop } label: {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("🎪 Parade Pass")
+                        .font(.system(size: 15, weight: .heavy, design: .rounded))
+                    Text("Ad-free · unlimited hints")
+                        .font(.system(size: 12, weight: .medium, design: .rounded)).opacity(0.92)
+                }
+                Spacer(minLength: 8)
+                Text("Try it")
+                    .font(.system(size: 13, weight: .heavy, design: .rounded))
+                    .foregroundStyle(Palette.paradeInk)
+                    .padding(.horizontal, 16).padding(.vertical, 9)
+                    .background(.white, in: Capsule())
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 16).padding(.vertical, 14)
+            .frame(maxWidth: .infinity)
+            .background(Gradients.parade, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .shadow(color: Palette.parade1.opacity(0.35), radius: 12, x: 0, y: 6)
+        }
+        .buttonStyle(.plain)
+    }
+
     private var logo: some View {
         VStack(spacing: 6) {
-            Image("breed_corgi").resizable().scaledToFit().frame(width: 96, height: 96)
-                .shadow(color: .black.opacity(0.08), radius: 8, y: 4)
+            Image("breed_corgi").resizable().scaledToFit().frame(width: 104, height: 104)
+                .shadow(color: Palette.brandShadow.opacity(0.35), radius: 12, y: 6)
             Text("Pupdoku")
                 .font(.system(size: 44, weight: .black, design: .rounded))
                 .foregroundStyle(Palette.ink)
@@ -155,9 +199,10 @@ struct HomeView: View {
             .foregroundStyle(filled ? .white : Palette.ink)
             .padding(.horizontal, 20).padding(.vertical, 18)
             .frame(maxWidth: .infinity)
-            .background(filled ? AnyShapeStyle(Palette.accent) : AnyShapeStyle(Palette.card),
+            .background(filled ? AnyShapeStyle(Gradients.brand) : AnyShapeStyle(Palette.card),
                         in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .shadow(color: .black.opacity(filled ? 0.12 : 0.05), radius: 8, y: 3)
+            .shadow(color: filled ? Palette.brandShadow.opacity(0.4) : .black.opacity(0.05),
+                    radius: filled ? 12 : 8, x: 0, y: filled ? 6 : 3)
         }
         .buttonStyle(.plain)
     }

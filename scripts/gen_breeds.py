@@ -42,8 +42,23 @@ def poodle_ears(ear):
         puffs.append(f'<circle cx="{x}" cy="{y}" r="{r}" fill="{ear}"/>')
     return "\n  " + "\n  ".join(puffs)
 
+def lighten(hex_color, amt=0.42):
+    """Blend a #RRGGBB color toward white by `amt` — used for the forehead sheen.
+    Apple's asset-catalog SVG importer is unreliable with gradients, so shading is
+    built from flat, fully-supported shapes instead."""
+    h = hex_color.lstrip("#")
+    r, g, b = (int(h[i:i+2], 16) for i in (0, 2, 4))
+    r = int(r + (255 - r) * amt); g = int(g + (255 - g) * amt); b = int(b + (255 - b) * amt)
+    return f"#{r:02X}{g:02X}{b:02X}"
+
+def ground_shadow():
+    """Soft contact shadow under the pup so it reads as sitting on the tile."""
+    return f'<ellipse cx="{CX}" cy="222" rx="64" ry="12" fill="#00000022"/>'
+
 def head(fur):
-    return f'<ellipse cx="{CX}" cy="{CY}" rx="{HRX}" ry="{HRY}" fill="{fur}" stroke="#00000018" stroke-width="2"/>'
+    # Base head, then a lighter upper-left sheen for a lit-from-above, rounded look.
+    return (f'<ellipse cx="{CX}" cy="{CY}" rx="{HRX}" ry="{HRY}" fill="{fur}" stroke="#00000018" stroke-width="2"/>'
+            f'<ellipse cx="{CX-16}" cy="{CY-22}" rx="46" ry="34" fill="{lighten(fur)}" opacity="0.45"/>')
 
 def eyes(blue=False, mask=False):
     pupil = "#25303B" if blue else "#2B2B2B"
@@ -53,8 +68,10 @@ def eyes(blue=False, mask=False):
                 f'<circle cx="{CX+EYE_DX}" cy="{EYE_Y}" r="{EYE_R}" fill="#5AA9E6"/>'
                 f'<circle cx="{CX-EYE_DX}" cy="{EYE_Y}" r="6.5" fill="#20313F"/>'
                 f'<circle cx="{CX+EYE_DX}" cy="{EYE_Y}" r="6.5" fill="#20313F"/>')
-    hi = (f'<circle cx="{CX-EYE_DX+4}" cy="{EYE_Y-4}" r="3.4" fill="#FFFFFF"/>'
-          f'<circle cx="{CX+EYE_DX+4}" cy="{EYE_Y-4}" r="3.4" fill="#FFFFFF"/>')
+    hi = (f'<circle cx="{CX-EYE_DX+4}" cy="{EYE_Y-4}" r="4.2" fill="#FFFFFF"/>'
+          f'<circle cx="{CX+EYE_DX+4}" cy="{EYE_Y-4}" r="4.2" fill="#FFFFFF"/>'
+          f'<circle cx="{CX-EYE_DX-4}" cy="{EYE_Y+4}" r="1.8" fill="#FFFFFF" opacity="0.7"/>'
+          f'<circle cx="{CX+EYE_DX-4}" cy="{EYE_Y+4}" r="1.8" fill="#FFFFFF" opacity="0.7"/>')
     return iris + hi
 
 def muzzle(color):
@@ -152,7 +169,7 @@ def main():
     for name, fn in BREEDS.items():
         set_dir = os.path.join(ROOT, f"breed_{name}.imageset")
         os.makedirs(set_dir, exist_ok=True)
-        svg = wrap(fn())
+        svg = wrap(ground_shadow() + fn())
         with open(os.path.join(set_dir, f"breed_{name}.svg"), "w", encoding="utf-8") as f:
             f.write(svg)
         with open(os.path.join(set_dir, "Contents.json"), "w", encoding="utf-8") as f:

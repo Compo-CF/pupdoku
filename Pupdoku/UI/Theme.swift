@@ -21,15 +21,29 @@ extension Color {
 enum Palette {
     static let accent      = Color(hex: "F2A65A")
     static let accentDeep  = Color(hex: "E8933F")
-    static let bgTop       = Color(hex: "FFF7EC")
-    static let bgBottom    = Color(hex: "FBE7CE")
+    static let accentBright = Color(hex: "F6A542")  // top of the brand gradient
+    static let brandShadow = Color(hex: "CF7A22")   // primary-button drop shadow
+    static let bgTop       = Color(hex: "FFF8EF")
+    static let bgBottom    = Color(hex: "FBE9D2")
     static let card        = Color.white
-    static let ink         = Color(hex: "3D3328")
-    static let inkSoft     = Color(hex: "8A7C6B")
+    static let ink         = Color(hex: "37302A")
+    static let inkSoft     = Color(hex: "9A8C7B")
     static let line        = Color(hex: "D9C7AE")
     static let lineBold    = Color(hex: "6E5B44")   // region divider / outer frame
     static let danger      = Color(hex: "E5604D")
     static let success     = Color(hex: "5FA463")
+
+    // Premium "Parade Pass" lane — a distinct purple so the upsell never reads
+    // like a regular control.
+    static let parade1     = Color(hex: "7C5CE0")
+    static let parade2     = Color(hex: "B56BE0")
+    static let paradeInk   = Color(hex: "6B46C1")   // text on white chip over purple
+
+    // Daily Puzzle lane — calm blue, set apart from the orange brand.
+    static let daily1      = Color(hex: "5AA9E6")
+    static let daily2      = Color(hex: "4F86D6")
+
+    static let bones       = Color(hex: "E8933F")
 
     /// Up to 9 light region fills — chosen for hue separation so adjacent regions
     /// read apart, and light enough that the ❌ mark and puppy art sit clearly on top.
@@ -40,6 +54,17 @@ enum Palette {
     ]
 
     static func region(_ i: Int) -> Color { regions[i % regions.count] }
+}
+
+// MARK: - Shared gradients
+
+enum Gradients {
+    static let brand = LinearGradient(colors: [Palette.accentBright, Palette.brandShadow],
+                                      startPoint: .top, endPoint: .bottom)
+    static let parade = LinearGradient(colors: [Palette.parade1, Palette.parade2],
+                                       startPoint: .topLeading, endPoint: .bottomTrailing)
+    static let daily = LinearGradient(colors: [Palette.daily1, Palette.daily2],
+                                      startPoint: .topLeading, endPoint: .bottomTrailing)
 }
 
 extension View {
@@ -53,6 +78,12 @@ extension View {
         self.padding(padding)
             .background(Palette.card, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
             .shadow(color: .black.opacity(0.06), radius: 10, x: 0, y: 4)
+    }
+
+    /// Filled primary action: brand gradient, soft colored drop shadow.
+    func pupPrimaryFill(radius: CGFloat = 18) -> some View {
+        self.background(Gradients.brand, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .shadow(color: Palette.brandShadow.opacity(0.4), radius: 12, x: 0, y: 6)
     }
 }
 
