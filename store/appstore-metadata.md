@@ -1,8 +1,10 @@
-# Pupdoku v3.0 — App Store metadata (paste-ready)
+# Pupdoku v3.1 — App Store metadata (paste-ready)
 
 Mechanic: "Find the Puppies" — a Queens-style logic-deduction puzzle. Not sudoku.
-v3.0 adds a full economy: Bones currency, board themes, seasonal Event Passes
-(with costumes), a Starter Pack, and the Parade Pass monthly subscription.
+v3.1 is a visual refresh (redesigned screens, re-illustrated pups, under-board
+Parade Pass/stats strip, mini board-size previews). The economy is unchanged from
+v3.0: Bones currency, board themes, seasonal Event Passes (with costumes), a
+Starter Pack, and the Parade Pass monthly subscription.
 
 ## App Name  (max 30)
 Pupdoku: Puppy Puzzles
@@ -11,7 +13,7 @@ Pupdoku: Puppy Puzzles
 Find the puppies — logic game
 
 ## Promotional Text  (max 170 — editable anytime without review)
-New: earn Bones, unlock puppy board themes, grab seasonal Event Passes with costumes, or go ad-free with unlimited hints on the Parade Pass. Find the hidden puppies!
+Freshly redrawn pups and a polished new look! Earn Bones, unlock board themes, grab seasonal costumes, or go ad-free with unlimited hints on the Parade Pass. Find the hidden puppies!
 
 ## Keywords  (max 100, comma-separated, no spaces)
 brain,deduction,dogs,animal,pet,kids,family,daily,offline,relaxing,zen,queens,region,solver,star
@@ -24,7 +26,7 @@ brain,deduction,dogs,animal,pet,kids,family,daily,offline,relaxing,zen,queens,re
 4+
 
 ## Description
-Meet Pupdoku — a cozy logic puzzle where you find the hidden puppies. Every board is split into colorful regions, and your job is to figure out exactly where each pup belongs. Easy to learn, wonderfully tricky to master, and stuffed with adorable illustrated breeds.
+Meet Pupdoku — a cozy logic puzzle where you find the hidden puppies, now with a freshly illustrated, more polished look. Every board is split into colorful regions, and your job is to figure out exactly where each pup belongs. Easy to learn, wonderfully tricky to master, and stuffed with adorable illustrated breeds.
 
 ONE PUP PER ROW, COLUMN & COLOR
 Place one puppy in every row, every column, and every colored region — and make sure no two puppies ever touch, not even diagonally. Every puzzle has exactly one solution, so it is always solvable with logic. No guessing required.
@@ -57,26 +59,26 @@ Whether you have two minutes or twenty, Pupdoku is a calm, rewarding brain game 
 Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 Privacy Policy: https://compo-cf.github.io/pupdoku/privacy.html
 
-## What's New (Version 3.0)
-Pupdoku just got a whole lot more to love!
+## What's New (Version 3.1)
+A big visual refresh — Pupdoku has never looked this good!
 
-🦴 Bones — earn Bones for every puzzle you solve and spend them on hints, themes, and passes.
-🎨 Board Themes — unlock and switch color themes: Midnight, Pastel, Neon, Autumn, and more.
-🎃 Event Passes — Spooky and Winter passes unlock seasonal themes AND puppy costumes.
-🎪 Parade Pass — a new monthly subscription for ad-free play and unlimited hints.
-🎁 Starter Pack — a one-time bundle to kick things off.
+🎨 Freshly illustrated pups — richer shading, glossier eyes, and a warmer, more polished board.
+✨ Redesigned screens — deeper tiles, a cleaner layout, and clearer type throughout.
+🎪 Parade Pass, right where you play — jump to ad-free puzzles with unlimited hints straight from the board.
+🦴 Progress at a glance — subscribers now see Bones, streak, and progress to the next size while they play.
+📐 Board-size previews — see each size before you pick a puzzle.
 
-Plus the usual: no surprise ads during play, and Undo is here to stay. Thanks for playing!
+Same cozy logic game, now with more polish. Thanks for playing!
 
 ## App Review Notes
 No login or account is required — all features are accessible on launch.
 
-WHAT IS NEW IN 3.0
-This version adds a full in-app economy: a "Bones" currency, cosmetic board themes, seasonal Event Passes, a Starter Pack bundle, and a new auto-renewable subscription (Parade Pass).
+WHAT IS NEW IN 3.1
+This is a visual refresh — redesigned screens, re-illustrated puppies, deeper board styling, mini board-size previews in the picker, and a strip beneath the board that promotes the Parade Pass (for non-subscribers) or shows Bones/streak/progress (for subscribers). No new in-app purchases or subscriptions were added in this version; the economy is unchanged from 3.0.
 
 HOW TO REACH EVERYTHING
 - Tap Play to start a puzzle (5x5 is available immediately; larger sizes unlock after a few wins). The Daily Puzzle button always gives a full-size board.
-- Home screen -> Shop shows all purchases.
+- Home screen -> Shop (or the Bones pill, top-right) shows all purchases.
 
 SUBSCRIPTION — Parade Pass (com.centricfiber.pupdoku.paradepass.monthly, monthly)
 - Unlocks ad-free play and unlimited hints while active.
