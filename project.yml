@@ -23,6 +23,10 @@ targets:
   Pupdoku:
     type: application
     platform: iOS
+    # scripts/testflight.sh runs `xcodebuild test -scheme Pupdoku`, so the scheme must include the tests.
+    scheme:
+      testTargets:
+        - PupdokuTests
     sources:
       - path: Pupdoku
         excludes:
@@ -34,7 +38,8 @@ targets:
       properties:
         CFBundleDisplayName: Pupdoku
         CFBundleShortVersionString: "3.1.1"
-        CFBundleVersion: "9"
+        # Build number comes from CURRENT_PROJECT_VERSION (scripts/testflight.sh passes the git commit count).
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         UILaunchScreen:
           UIColorName: "LaunchBackground"
         UISupportedInterfaceOrientations:
@@ -50,6 +55,8 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         GENERATE_INFOPLIST_FILE: NO
+        # Fallback for manual Xcode archives; scripts/testflight.sh overrides it with the commit count.
+        CURRENT_PROJECT_VERSION: "9"
     dependencies:
       - package: GoogleMobileAds
         product: GoogleMobileAds
