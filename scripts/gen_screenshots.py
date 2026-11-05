@@ -1,253 +1,352 @@
 #!/usr/bin/env python3
-"""Generate App Store marketing screenshots for Pupdoku at 6.9" (1320x2868).
+"""Generate App Store marketing screenshots for Pupdoku in the v3.1 look.
 
-Renders faithful mockups of the real app screens (same palette, layout, and the
-same Pillow-drawn breed faces used by the icon) with a caption headline on each.
-Supersampled 2x for clean antialiased edges.
+These depict the REAL game — "Find the Puppies" (a Queens-style logic puzzle:
+one puppy per row, column, and colored region, none touching) — not the old
+sudoku build. Each screen is a full-bleed marketing mockup (warm cream world,
+white board card with a brown region frame + drop shadow, gradient-shaded pups,
+purple Parade Pass accents) with a caption headline, matching UI/Theme.swift,
+BoardView, CellView, DifficultySelectView and the v3.1 refresh.
 
-Output: store/screenshots/6.9/<n>_<name>.png
+Rendered as SVG -> headless Chrome/Edge so gradients, shadows and real fonts are
+faithful. Output: store/screenshots/<6.9|6.5>/<n>_<name>.png
+
+  6.9" = 1320x2868   (required)
+  6.5" = 1242x2688   (optional, widely used)
 """
-import os
-from PIL import Image, ImageDraw, ImageFont
+import os, subprocess
 
-K = 2                      # supersample
-W, H = 1320, 2868          # 6.9" portrait
-OUT = os.path.join(os.path.dirname(__file__), "..", "store", "screenshots", "6.9")
+ROOT = os.path.join(os.path.dirname(__file__), "..")
+OUTBASE = os.path.join(ROOT, "store", "screenshots")
 
-FONT_BOLD  = "C:/Windows/Fonts/segoeuib.ttf"
-FONT_BLACK = "C:/Windows/Fonts/seguibl.ttf"
-FONT_REG   = "C:/Windows/Fonts/segoeui.ttf"
-FONT_EMOJI = "C:/Windows/Fonts/seguiemj.ttf"
+SIZES = {"6.9": (1320, 2868), "6.5": (1242, 2688)}
 
-def Hx(s):
-    s = s.lstrip("#"); return (int(s[0:2],16), int(s[2:4],16), int(s[4:6],16))
-def lerp(a,b,t): return tuple(int(a[i]+(b[i]-a[i])*t) for i in range(3))
+# --- palette (mirrors UI/Theme.swift) ---------------------------------------
+BG_TOP, BG_BOT = "FFF8EF", "FBE9D2"
+INK, INK_SOFT = "37302A", "9A8C7B"
+ACCENT_BRIGHT, BRAND_SHADOW = "F6A542", "CF7A22"
+LINE_BOLD = "6E5B44"
+SUCCESS = "5FA463"
+BONES = "E8933F"
+PARADE1, PARADE2, PARADE_INK = "7C5CE0", "B56BE0", "6B46C1"
+DAILY1, DAILY2 = "5AA9E6", "4F86D6"
+REGIONS = ["F6C9A8", "A8D8EA", "C7E9B0", "F7B7C6", "F9E1A8",
+           "C9B8E8", "A8E6CF", "FFD3B6", "D6C3A5"]
 
-# Palette (mirrors UI/Theme.swift)
-BG_TOP, BG_BOT = Hx("FFF7EC"), Hx("FBE7CE")
-CARD = Hx("FFFFFF"); INK = Hx("3D3328"); INK_SOFT = Hx("8A7C6B")
-LINE = Hx("D9C7AE"); LINE_BOLD = Hx("9E8A6E")
-CELL_GIVEN = Hx("FDF3E4"); SELECTED = Hx("FBD9A6"); PEER = Hx("FBEFDC"); SAME = Hx("F7E3C0")
-ACCENT = Hx("F2A65A"); ACCENT_DEEP = Hx("E8933F"); SUCCESS = Hx("5FA463")
+FONT = "'Segoe UI',system-ui,-apple-system,sans-serif"
 
-def font(path, size):
-    try: return ImageFont.truetype(path, size*K)
-    except Exception: return ImageFont.truetype(FONT_REG, size*K)
+# --- a genuinely valid 6x6 Queens solution ----------------------------------
+# Region map: 6 contiguous regions, each containing exactly one puppy.
+REGION_MAP = [
+    [0, 0, 1, 1, 2, 2],
+    [0, 0, 1, 1, 2, 2],
+    [0, 3, 1, 4, 2, 2],
+    [3, 3, 3, 4, 4, 5],
+    [3, 3, 4, 4, 5, 5],
+    [3, 3, 4, 5, 5, 5],
+]
+# One puppy per row, column AND region; no two adjacent (incl. diagonally).
+PUPPIES = {(0, 1), (1, 3), (2, 5), (3, 0), (4, 2), (5, 4)}
+# Breed per region index (mapped to the gradient pups we can render).
+REGION_PUP = {0: "corgi", 1: "husky", 2: "shiba", 3: "poodle", 4: "golden", 5: "husky"}
 
-# Breed params for Pillow face drawing (values 1..9 as in Breed.swift)
-BREEDS = {
- 1: dict(fur="F2A65A", ear="E8933F", inner="F6C79A", muzzle="FBEAD2", ears="up"),
- 2: dict(fur="B8C6D4", ear="5C6B7A", inner="D9DFE6", muzzle="F3F5F7", ears="up", blue=True, cap="5C6B7A"),
- 3: dict(fur="D9B98A", ear="5A4632", inner="7A6248", muzzle="4A3A2A", ears="floppy", nose="1F1F1F"),
- 4: dict(fur="F1F2F4", ear="2C2C2C", inner="6E6E6E", muzzle="FFFFFF", ears="floppy", spots=True),
- 5: dict(fur="F4C542", ear="E0A93C", inner="F4D488", muzzle="FBE7B0", ears="floppy"),
- 6: dict(fur="E06B4A", ear="C8573A", inner="F3C9B4", muzzle="FBEEE4", ears="up"),
- 7: dict(fur="B98A5E", ear="5A3A26", inner="8A6244", muzzle="F5EAD9", ears="floppy", cap="6E4B34"),
- 8: dict(fur="EFC7DC", ear="E7B4CE", inner="F4D6E6", muzzle="FBECF4", ears="floppy", pom=True, nose="7A4A63"),
- 9: dict(fur="6E4B3A", ear="4A2F22", inner="6E4B3A", muzzle="B98A5E", ears="floppy", nose="1F1F1F"),
-}
+# ---------------------------------------------------------------------------
+def defs():
+    return '''<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#%s"/><stop offset="1" stop-color="#%s"/></linearGradient>
+  <linearGradient id="brand" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#%s"/><stop offset="1" stop-color="#%s"/></linearGradient>
+  <linearGradient id="parade" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#%s"/><stop offset="1" stop-color="#%s"/></linearGradient>
+  <linearGradient id="daily" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#%s"/><stop offset="1" stop-color="#%s"/></linearGradient>
+  <linearGradient id="celltop" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#ffffff" stop-opacity="0.28"/>
+    <stop offset="0.5" stop-color="#ffffff" stop-opacity="0"/>
+    <stop offset="1" stop-color="#000000" stop-opacity="0.07"/></linearGradient>
+  <radialGradient id="corgi" cx="42%%" cy="34%%" r="75%%"><stop offset="0" stop-color="#F9C07E"/><stop offset="1" stop-color="#E8912F"/></radialGradient>
+  <linearGradient id="corgiEar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E8912F"/><stop offset="1" stop-color="#CF7A22"/></linearGradient>
+  <radialGradient id="husky" cx="42%%" cy="32%%" r="78%%"><stop offset="0" stop-color="#CBD7E2"/><stop offset="1" stop-color="#9DB1C4"/></radialGradient>
+  <radialGradient id="poodle" cx="42%%" cy="32%%" r="78%%"><stop offset="0" stop-color="#F6D3E6"/><stop offset="1" stop-color="#E6A7CC"/></radialGradient>
+  <radialGradient id="golden" cx="42%%" cy="32%%" r="78%%"><stop offset="0" stop-color="#FAD86A"/><stop offset="1" stop-color="#ECB62E"/></radialGradient>
+  <radialGradient id="shiba" cx="42%%" cy="32%%" r="78%%"><stop offset="0" stop-color="#F0A074"/><stop offset="1" stop-color="#D96E43"/></radialGradient>
+  <radialGradient id="eye" cx="38%%" cy="34%%" r="70%%"><stop offset="0" stop-color="#4a4a4a"/><stop offset="1" stop-color="#1d1d1d"/></radialGradient>
+  <filter id="cardshadow" x="-20%%" y="-20%%" width="140%%" height="140%%">
+    <feDropShadow dx="0" dy="8" stdDeviation="14" flood-color="#000000" flood-opacity="0.12"/></filter>
+  <filter id="btnshadow" x="-40%%" y="-40%%" width="180%%" height="180%%">
+    <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#%s" flood-opacity="0.40"/></filter>
+</defs>''' % (BG_TOP, BG_BOT, ACCENT_BRIGHT, BRAND_SHADOW, PARADE1, PARADE2,
+              DAILY1, DAILY2, BRAND_SHADOW)
 
-def face(d, cx, cy, r, p):
-    """Draw a breed face centered at (cx,cy) radius r, all in raw (scaled) px."""
-    def E(x0,y0,x1,y1,c): d.ellipse([x0,y0,x1,y1], fill=Hx(c) if isinstance(c,str) else c)
-    ear, inner, fur = p["ear"], p["inner"], p["fur"]
-    muzzle = p["muzzle"]; nose = p.get("nose","2B2B2B"); ears = p.get("ears","up")
-    if ears == "up":
-        d.polygon([(cx-r*0.7,cy-r*0.2),(cx-r*0.85,cy-r*1.15),(cx-r*0.15,cy-r*0.55)], fill=Hx(ear))
-        d.polygon([(cx+r*0.7,cy-r*0.2),(cx+r*0.85,cy-r*1.15),(cx+r*0.15,cy-r*0.55)], fill=Hx(ear))
-        d.polygon([(cx-r*0.62,cy-r*0.3),(cx-r*0.7,cy-r*0.9),(cx-r*0.28,cy-r*0.5)], fill=Hx(inner))
-        d.polygon([(cx+r*0.62,cy-r*0.3),(cx+r*0.7,cy-r*0.9),(cx+r*0.28,cy-r*0.5)], fill=Hx(inner))
+def pup(kind):
+    fur = f"url(#{kind})"
+    if kind == "corgi":
+        ears = ('<path d="M60 108 Q40 36 86 76 Z" fill="url(#corgiEar)"/>'
+                '<path d="M180 108 Q200 36 154 76 Z" fill="url(#corgiEar)"/>')
+    elif kind in ("husky", "shiba"):
+        ec = "#5C6B7A" if kind == "husky" else "#C8573A"
+        ears = (f'<path d="M60 108 Q40 36 86 76 Z" fill="{ec}"/>'
+                f'<path d="M180 108 Q200 36 154 76 Z" fill="{ec}"/>')
     else:
-        E(cx-r*1.05,cy-r*0.35,cx-r*0.35,cy+r*0.95, ear)
-        E(cx+r*0.35,cy-r*0.35,cx+r*1.05,cy+r*0.95, ear)
-    if p.get("pom"):
-        for dx,dy,rr in [(0,-0.95,0.5),(-0.5,-0.7,0.4),(0.5,-0.7,0.4)]:
-            E(cx+dx*r-rr*r,cy+dy*r-rr*r,cx+dx*r+rr*r,cy+dy*r+rr*r, ear)
-    E(cx-r,cy-r*0.92,cx+r,cy+r*0.92, fur)                       # head
-    if p.get("cap"): d.pieslice([cx-r,cy-r*0.92,cx+r,cy+r*0.92], 180,360, fill=Hx(p["cap"]))
-    E(cx-r*0.62,cy+r*0.1,cx+r*0.62,cy+r*0.85, muzzle)          # muzzle
-    if p.get("spots"):
-        for sx,sy,sr in [(-0.5,-0.4,0.16),(0.55,0.2,0.12),(0.4,-0.55,0.1)]:
-            E(cx+sx*r-sr*r,cy+sy*r-sr*r,cx+sx*r+sr*r,cy+sy*r+sr*r,"2C2C2C")
-    ex,ey,er = r*0.42, r*0.15, r*0.17
-    if p.get("blue"):
-        E(cx-ex-er,cy-ey-er,cx-ex+er,cy-ey+er,"5AA9E6"); E(cx+ex-er,cy-ey-er,cx+ex+er,cy-ey+er,"5AA9E6")
-        e2=r*0.09
-        E(cx-ex-e2,cy-ey-e2,cx-ex+e2,cy-ey+e2,"20313F"); E(cx+ex-e2,cy-ey-e2,cx+ex+e2,cy-ey+e2,"20313F")
-    else:
-        E(cx-ex-er,cy-ey-er,cx-ex+er,cy-ey+er,"2B2B2B"); E(cx+ex-er,cy-ey-er,cx+ex+er,cy-ey+er,"2B2B2B")
-    hr=r*0.055
-    E(cx-ex-hr+r*0.06,cy-ey-hr-r*0.06,cx-ex+hr+r*0.06,cy-ey+hr-r*0.06,"FFFFFF")
-    E(cx+ex-hr+r*0.06,cy-ey-hr-r*0.06,cx+ex+hr+r*0.06,cy-ey+hr-r*0.06,"FFFFFF")
-    d.polygon([(cx-r*0.16,cy+r*0.34),(cx+r*0.16,cy+r*0.34),(cx,cy+r*0.52)], fill=Hx(nose))
-    lwid=max(1,int(r*0.05))
-    d.line([(cx,cy+r*0.5),(cx,cy+r*0.66)], fill=Hx(nose), width=lwid)
-    d.arc([cx-r*0.3,cy+r*0.5,cx,cy+r*0.82], 20,160, fill=Hx(nose), width=lwid)
-    d.arc([cx,cy+r*0.5,cx+r*0.3,cy+r*0.82], 20,160, fill=Hx(nose), width=lwid)
+        ec = {"poodle": "#E7B4CE", "golden": "#E0A93C"}[kind]
+        ears = (f'<ellipse cx="48" cy="150" rx="27" ry="50" transform="rotate(-14 48 150)" fill="{ec}"/>'
+                f'<ellipse cx="192" cy="150" rx="27" ry="50" transform="rotate(14 192 150)" fill="{ec}"/>')
+    muzzle = {"corgi": "#FCEBD2", "husky": "#F3F5F7", "poodle": "#FBECF4",
+              "golden": "#FBE7B0", "shiba": "#FBEEE4"}[kind]
+    blue = kind == "husky"
+    pom = ('<circle cx="120" cy="60" r="30" fill="#F2C3DC"/><circle cx="98" cy="74" r="20" fill="#F2C3DC"/>'
+           '<circle cx="142" cy="74" r="20" fill="#F2C3DC"/>') if kind == "poodle" else ""
+    cap = ('<path d="M120 60 Q54 68 60 150 Q90 120 120 120 Q150 120 180 150 Q186 68 120 60 Z" fill="#5C6B7A"/>'
+           ) if kind == "husky" else ""
+    eye = "#5AA9E6" if blue else "url(#eye)"
+    bluep = ('<circle cx="90" cy="120" r="7" fill="#1d2b36"/><circle cx="150" cy="120" r="7" fill="#1d2b36"/>'
+             ) if blue else ""
+    return (f'<g>'
+            f'<ellipse cx="120" cy="212" rx="70" ry="14" fill="rgba(0,0,0,.12)"/>{pom}{ears}'
+            f'<ellipse cx="120" cy="130" rx="86" ry="80" fill="{fur}"/>{cap}'
+            f'<ellipse cx="120" cy="168" rx="46" ry="34" fill="{muzzle}"/>'
+            f'<ellipse cx="78" cy="150" rx="12" ry="9" fill="#FF9E9E" opacity=".4"/>'
+            f'<ellipse cx="162" cy="150" rx="12" ry="9" fill="#FF9E9E" opacity=".4"/>'
+            f'<circle cx="90" cy="120" r="15" fill="{eye}"/><circle cx="150" cy="120" r="15" fill="{eye}"/>{bluep}'
+            f'<circle cx="95" cy="114" r="4.5" fill="#fff"/><circle cx="155" cy="114" r="4.5" fill="#fff"/>'
+            f'<path d="M108 156 Q120 170 132 156 Q120 150 108 156 Z" fill="#2B2B2B"/>'
+            f'<path d="M120 166 V180" stroke="#2B2B2B" stroke-width="3.2" stroke-linecap="round"/>'
+            f'<path d="M120 180 Q107 193 94 184 M120 180 Q133 193 146 184" stroke="#2B2B2B" stroke-width="3.2" fill="none" stroke-linecap="round"/>'
+            f'</g>')
 
-def new_canvas():
-    img = Image.new("RGB", (W*K, H*K), BG_TOP)
-    d = ImageDraw.Draw(img, "RGBA")
-    for y in range(H*K):
-        d.line([(0,y),(W*K,y)], fill=lerp(BG_TOP,BG_BOT,y/(H*K)))
-    return img, d
+def place(kind, cx, cy, scale, rot=0):
+    s = scale / 240.0
+    return f'<g transform="translate({cx},{cy}) rotate({rot}) scale({s}) translate(-120,-120)">{pup(kind)}</g>'
 
-def s(v): return int(v*K)
+def xmark(cx, cy, s):
+    c = f"#{INK}"
+    return (f'<g stroke="{c}" stroke-opacity="0.45" stroke-width="{s*0.14}" stroke-linecap="round">'
+            f'<line x1="{cx-s/2}" y1="{cy-s/2}" x2="{cx+s/2}" y2="{cy+s/2}"/>'
+            f'<line x1="{cx-s/2}" y1="{cy+s/2}" x2="{cx+s/2}" y2="{cy-s/2}"/></g>')
 
-def caption(d, headline, sub=None):
-    f = font(FONT_BLACK, 78)
-    d.text((W*K/2, s(180)), headline, font=f, fill=INK, anchor="mm", align="center")
-    if sub:
-        d.text((W*K/2, s(268)), sub, font=font(FONT_BOLD,40), fill=INK_SOFT, anchor="mm", align="center")
+def board(ox, oy, side, states):
+    """Render the 6x6 Queens board (white card, brown region frame, gradient pups).
+    `states`: dict (r,c)->'p'|'x'|'' overriding the solved placement."""
+    n = 6
+    cell = side / n
+    pad = cell * 0.16
+    el = []
+    el.append(f'<rect x="{ox-pad}" y="{oy-pad}" width="{side+2*pad}" height="{side+2*pad}" '
+              f'rx="{side*0.035}" fill="#ffffff" filter="url(#cardshadow)"/>')
+    for r in range(n):
+        for c in range(n):
+            reg = REGION_MAP[r][c]
+            x, y = ox + c * cell, oy + r * cell
+            el.append(f'<rect x="{x}" y="{y}" width="{cell}" height="{cell}" fill="#{REGIONS[reg]}"/>')
+            el.append(f'<rect x="{x}" y="{y}" width="{cell}" height="{cell}" fill="url(#celltop)"/>')
+            st = states.get((r, c), 'p' if (r, c) in PUPPIES else '')
+            if st == 'p':
+                el.append(place(REGION_PUP[reg], x + cell / 2, y + cell / 2, cell * 0.74))
+            elif st == 'x':
+                el.append(xmark(x + cell / 2, y + cell / 2, cell * 0.34))
+    tw, thin = cell * 0.05, cell * 0.014
+    for r in range(n):
+        for c in range(n):
+            x, y = ox + c * cell, oy + r * cell
+            if c < n - 1:
+                bold = REGION_MAP[r][c] != REGION_MAP[r][c + 1]
+                el.append(f'<line x1="{x+cell}" y1="{y}" x2="{x+cell}" y2="{y+cell}" '
+                          f'stroke="#{LINE_BOLD}" stroke-opacity="{1 if bold else 0.18}" '
+                          f'stroke-width="{tw if bold else thin}"/>')
+            if r < n - 1:
+                bold = REGION_MAP[r][c] != REGION_MAP[r + 1][c]
+                el.append(f'<line x1="{x}" y1="{y+cell}" x2="{x+cell}" y2="{y+cell}" '
+                          f'stroke="#{LINE_BOLD}" stroke-opacity="{1 if bold else 0.18}" '
+                          f'stroke-width="{tw if bold else thin}"/>')
+    el.append(f'<rect x="{ox}" y="{oy}" width="{side}" height="{side}" fill="none" '
+              f'stroke="#{LINE_BOLD}" stroke-width="{cell*0.06}" rx="{cell*0.08}"/>')
+    return "".join(el)
 
-def rrect(d, box, radius, fill=None, outline=None, width=1):
-    b=[s(box[0]),s(box[1]),s(box[2]),s(box[3])]
-    d.rounded_rectangle(b, radius=s(radius), fill=fill, outline=outline, width=s(width) if outline else 0)
+def mini_board(ox, oy, size, n):
+    """Small n x n colored difficulty preview with a brown frame."""
+    cell = size / n
+    el = [f'<rect x="{ox}" y="{oy}" width="{size}" height="{size}" rx="{size*0.12}" fill="#ffffff"/>']
+    for r in range(n):
+        for c in range(n):
+            col = REGIONS[(r + c) % len(REGIONS)]
+            el.append(f'<rect x="{ox+c*cell+1}" y="{oy+r*cell+1}" width="{cell-2}" height="{cell-2}" '
+                      f'rx="{cell*0.18}" fill="#{col}"/>')
+    el.append(f'<rect x="{ox}" y="{oy}" width="{size}" height="{size}" rx="{size*0.12}" '
+              f'fill="none" stroke="#{LINE_BOLD}" stroke-width="{size*0.03}"/>')
+    return "".join(el)
 
-def save(img, name):
-    os.makedirs(OUT, exist_ok=True)
-    img.resize((W,H), Image.LANCZOS).save(os.path.join(OUT,name), "PNG")
-    print("wrote", name)
+def text(x, y, s, size, color, weight=900, anchor="middle"):
+    return (f'<text x="{x}" y="{y}" font-family="{FONT}" font-size="{size}" font-weight="{weight}" '
+            f'fill="#{color}" text-anchor="{anchor}">{s}</text>')
 
-# A valid 9x9 solution to display believable boards.
-SOLUTION = [
- [5,3,4,6,7,8,9,1,2],[6,7,2,1,9,5,3,4,8],[1,9,8,3,4,2,5,6,7],
- [8,5,9,7,6,1,4,2,3],[4,2,6,8,5,3,7,9,1],[7,1,3,9,2,4,8,5,6],
- [9,6,1,5,3,7,2,8,4],[2,8,7,4,1,9,6,3,5],[3,4,5,2,8,6,1,7,9]]
-BLANKS = {(0,3),(0,6),(1,1),(1,5),(2,2),(2,7),(3,0),(3,4),(3,8),
-          (4,2),(4,6),(5,1),(5,5),(6,3),(6,7),(7,0),(7,4),(8,2),(8,6),(1,8),(7,8)}
+def caption(W, head, sub, y=150):
+    return (text(W/2, y, head, W*0.062, INK, 900)
+            + text(W/2, y + W*0.052, sub, W*0.034, INK_SOFT, 700))
 
-def screen_board():
-    img,d = new_canvas()
-    caption(d, "Fill every row,", "column & box with one of each breed")
-    # board
-    side=1180; x0=(W-side)//2; y0=430; cell=side/9
-    rrect(d,(x0-10,y0-10,x0+side+10,y0+side+10),34,fill=CARD)
-    sel=(0,3)
-    for r in range(9):
-        for c in range(9):
-            X=x0+c*cell; Y=y0+r*cell
-            bg=CARD
-            if (r,c)==sel: bg=SELECTED
-            elif r==sel[0] or c==sel[1] or (r//3==sel[0]//3 and c//3==sel[1]//3): bg=PEER
-            elif (r,c) not in BLANKS and SOLUTION[r][c]==SOLUTION[sel[0]][sel[1]]: bg=SAME
-            d.rectangle([s(X),s(Y),s(X+cell),s(Y+cell)], fill=bg)
-            if (r,c) not in BLANKS:
-                face(d, s(X+cell/2), s(Y+cell/2), s(cell*0.36), BREEDS[SOLUTION[r][c]])
-    # thin grid
-    for i in range(1,9):
-        d.line([(s(x0+i*cell),s(y0)),(s(x0+i*cell),s(y0+side))], fill=LINE, width=s(1))
-        d.line([(s(x0),s(y0+i*cell)),(s(x0+side),s(y0+i*cell))], fill=LINE, width=s(1))
-    for i in range(0,10,3):
-        d.line([(s(x0+i*cell),s(y0)),(s(x0+i*cell),s(y0+side))], fill=LINE_BOLD, width=s(3))
-        d.line([(s(x0),s(y0+i*cell)),(s(x0+side),s(y0+i*cell))], fill=LINE_BOLD, width=s(3))
-    rrect(d,(x0-10,y0-10,x0+side+10,y0+side+10),34,outline=LINE_BOLD,width=3)
-    # palette row (9 tokens)
-    py=y0+side+70; pw=1180; px0=(W-pw)//2; bw=pw/9
-    for v in range(1,10):
-        bx=px0+(v-1)*bw
-        rrect(d,(bx+6,py,bx+bw-6,py+150),22,fill=CARD,outline=LINE,width=1)
-        face(d, s(bx+bw/2), s(py+75), s(bw*0.32), BREEDS[v])
-    save(img,"1_board.png")
+def rrect(x, y, w, h, r, fill, stroke=None, sw=0, filt=None):
+    s = f' stroke="#{stroke}" stroke-width="{sw}"' if stroke else ''
+    f = f' filter="url(#{filt})"' if filt else ''
+    return f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{r}" fill="{fill}"{s}{f}/>'
 
-def button(d, box, text, filled=True, sub=None):
-    rrect(d, box, 30, fill=ACCENT if filled else CARD)
-    col = Hx("FFFFFF") if filled else INK
-    cy = (box[1]+box[3])/2 - (14 if sub else 0)
-    d.text((s((box[0]+box[2])/2), s(cy)), text, font=font(FONT_BLACK,54), fill=col, anchor="mm")
-    if sub:
-        subcol = Hx("FFFFFF") if filled else INK_SOFT
-        d.text((s((box[0]+box[2])/2), s(cy+58)), sub, font=font(FONT_BOLD,30), fill=subcol, anchor="mm")
+# --- screens ----------------------------------------------------------------
+def screen_board(W, H):
+    el = [f'<rect width="{W}" height="{H}" fill="url(#bg)"/>',
+          caption(W, "Find the hidden puppies", "One per row, column &amp; color")]
+    el.append(rrect(W*0.08, H*0.115, W*0.30, W*0.085, W*0.042, "#ffffff"))
+    el.append(text(W*0.14, H*0.115 + W*0.058, "🦴", W*0.045, INK, 400, "middle"))
+    el.append(text(W*0.20, H*0.115 + W*0.057, "128", W*0.040, INK, 900, "start"))
+    el.append(rrect(W*0.58, H*0.115, W*0.34, W*0.085, W*0.042, "#ffffff"))
+    el.append(text(W*0.75, H*0.115 + W*0.057, "6 × 6  ·  Easy", W*0.030, INK_SOFT, 800, "middle"))
+    side = W * 0.84
+    board_y = H * 0.25
+    el.append(board((W - side) / 2, board_y, side, {}))
+    by = board_y + side + H*0.055
+    for i, (emo, lab) in enumerate([("💡", "Hint"), ("↩", "Undo"), ("✓", "Check")]):
+        bw = W * 0.26; bx = W*0.08 + i * (bw + W*0.03)
+        el.append(rrect(bx, by, bw, W*0.11, W*0.05, "#ffffff"))
+        el.append(text(bx + bw/2, by + W*0.068, f"{emo}  {lab}", W*0.034, INK, 800, "middle"))
+    return wrap(W, H, el)
 
-def screen_home():
-    img,d = new_canvas()
-    face(d, s(W/2), s(560), s(150), BREEDS[1])
-    d.text((s(W/2), s(800)), "Pupdoku", font=font(FONT_BLACK,140), fill=INK, anchor="mm")
-    d.text((s(W/2), s(910)), "Sudoku, but make it puppies", font=font(FONT_BOLD,44), fill=INK_SOFT, anchor="mm")
-    button(d,(140,1120,1180,1300),"Play", sub="Pick a size & difficulty")
-    rrect(d,(140,1340,1180,1520),30,fill=CARD,outline=Hx("F2A65A"),width=2)
-    d.text((s(220), s(1408)), "🦴", font=font(FONT_EMOJI,64), fill=INK, anchor="mm", embedded_color=True)
-    d.text((s(300), s(1392)), "Daily Puzzle", font=font(FONT_BLACK,50), fill=INK, anchor="lm")
-    d.text((s(300), s(1452)), "Daily · Hard", font=font(FONT_BOLD,32), fill=INK_SOFT, anchor="lm")
-    # utility row
-    labels=[("📊","Stats"),("🏅","Awards"),("🛒","Shop"),("⚙️","Settings")]
-    uw=1040/4; ux0=140
-    for i,(emo,lab) in enumerate(labels):
-        bx=ux0+i*uw
-        rrect(d,(bx+10,1580,bx+uw-10,1760),24,fill=CARD)
-        d.text((s(bx+uw/2), s(1650)), emo, font=font(FONT_EMOJI,52), fill=INK, anchor="mm", embedded_color=True)
-        d.text((s(bx+uw/2), s(1720)), lab, font=font(FONT_BOLD,30), fill=INK, anchor="mm")
-    caption(d, "A cozy daily habit", "for the whole family")
-    save(img,"2_home.png")
+def screen_deduce(W, H):
+    st = {}
+    keep = {(0, 1), (3, 0), (5, 4)}
+    for (r, c) in PUPPIES:
+        if (r, c) not in keep:
+            st[(r, c)] = ''
+    for (dr, dc) in [(-1,-1),(-1,0),(-1,1),(0,-1),(0,1),(1,-1),(1,0),(1,1)]:
+        r, c = 3 + dr, 0 + dc
+        if 0 <= r < 6 and 0 <= c < 6 and (r, c) not in PUPPIES:
+            st[(r, c)] = 'x'
+    st[(2, 2)] = 'x'; st[(4, 4)] = 'x'; st[(1, 5)] = 'x'
+    el = [f'<rect width="{W}" height="{H}" fill="url(#bg)"/>',
+          caption(W, "Deduce, don't guess", "No two puppies may touch — even diagonally")]
+    side = W * 0.84
+    board_y = H * 0.27
+    el.append(board((W - side) / 2, board_y, side, st))
+    cy = board_y + side + H*0.05
+    el.append(rrect(W*0.10, cy, W*0.80, W*0.17, W*0.05, "#ffffff"))
+    el.append(text(W/2, cy + W*0.065, "Mark ✕ to rule a square out,", W*0.034, INK, 800))
+    el.append(text(W/2, cy + W*0.120, "then place the puppy that must go there.", W*0.032, INK_SOFT, 700))
+    return wrap(W, H, el)
 
-def screen_difficulty():
-    img,d = new_canvas()
-    caption(d, "From 4×4 to a full 9×9", "unlock bigger boards as you win")
-    sizes=[("4 × 4","Puppy Pals"),("6 × 6","Little Litter"),("9 × 9","Full Pack")]
-    cw=1040/3; cx0=140
-    for i,(t,su) in enumerate(sizes):
-        bx=cx0+i*cw; filled=(i==2)
-        rrect(d,(bx+12,440,bx+cw-12,650),24, fill=ACCENT if filled else CARD, outline=None if filled else LINE, width=1)
-        col=Hx("FFFFFF") if filled else INK
-        d.text((s(bx+cw/2), s(520)), t, font=font(FONT_BLACK,54), fill=col, anchor="mm")
-        d.text((s(bx+cw/2), s(585)), su, font=font(FONT_BOLD,28), fill=(Hx("FFFFFF") if filled else INK_SOFT), anchor="mm")
-    diffs=[("🐾","Puppy","62 clues · relaxed, no fail"),("🦴","Easy","clues aplenty · 5 mistakes"),
-           ("🎾","Medium","fewer clues · 4 mistakes"),("🏆","Hard","sparse clues · 3 mistakes")]
-    y=730
-    for emo,name,sub in diffs:
-        rrect(d,(140,y,1180,y+190),26,fill=CARD)
-        d.text((s(230), s(y+95)), emo, font=font(FONT_EMOJI,66), fill=INK, anchor="mm", embedded_color=True)
-        d.text((s(320), s(y+72)), name, font=font(FONT_BLACK,52), fill=INK, anchor="lm")
-        d.text((s(320), s(y+130)), sub, font=font(FONT_BOLD,32), fill=INK_SOFT, anchor="lm")
-        d.text((s(1120), s(y+95)), "›", font=font(FONT_BOLD,60), fill=INK_SOFT, anchor="mm")
-        y+=220
-    save(img,"3_difficulty.png")
+def screen_difficulty(W, H):
+    el = [f'<rect width="{W}" height="{H}" fill="url(#bg)"/>',
+          caption(W, "Grow your pack", "From a tiny 5×5 up to a full 9×9")]
+    rows = [("🐾", "Puppy", "5 × 5", "Puppy Pals", 5),
+            ("🦴", "Easy", "6 × 6", "Little Litter", 6),
+            ("🎾", "Medium", "7 × 7", "Growing Pack", 7),
+            ("🏆", "Hard", "8 × 8", "Big Pack", 8),
+            ("👑", "Expert", "9 × 9", "Full Kennel", 9)]
+    y = H * 0.24
+    rh = H * 0.135
+    for emo, name, size, sub, n in rows:
+        el.append(rrect(W*0.08, y, W*0.84, rh*0.88, W*0.05, "#ffffff", filt="cardshadow"))
+        ms = rh * 0.64
+        el.append(mini_board(W*0.12, y + (rh*0.88 - ms)/2, ms, n))
+        tx = W*0.12 + ms + W*0.05
+        el.append(text(tx, y + rh*0.37, f"{emo}  {name}", W*0.044, INK, 900, "start"))
+        el.append(text(tx, y + rh*0.60, f"{size}  ·  {sub}", W*0.030, INK_SOFT, 700, "start"))
+        y += rh
+    return wrap(W, H, el)
 
-def screen_win():
-    img,d = new_canvas()
-    d.text((s(W/2), s(560)), "🏆", font=font(FONT_EMOJI,220), fill=INK, anchor="mm", embedded_color=True)
-    d.text((s(W/2), s(820)), "Good Dog!", font=font(FONT_BLACK,120), fill=INK, anchor="mm")
-    rrect(d,(180,960,1140,1270),28,fill=CARD)
-    d.text((s(240), s(1050)), "Time", font=font(FONT_BOLD,44), fill=INK_SOFT, anchor="lm")
-    d.text((s(1080), s(1050)), "4:12", font=font(FONT_BLACK,56), fill=INK, anchor="rm")
-    rrect(d,(240,1120,470,1180),18,fill=SUCCESS)
-    d.text((s(355), s(1150)), "New best!", font=font(FONT_BOLD,30), fill=Hx("FFFFFF"), anchor="mm")
-    d.text((s(1080), s(1150)), "Perfect clear — no mistakes, no hints",
-           font=font(FONT_BOLD,30), fill=SUCCESS, anchor="rm")
-    # a happy row of breeds
-    for i,v in enumerate([1,5,6,8,2]):
-        face(d, s(320+i*170), s(1470), s(78), BREEDS[v])
-    button(d,(220,1650,1100,1830),"Play Again")
-    caption(d, "Win with a happy pack", "beat your best time")
-    save(img,"4_win.png")
+def screen_win(W, H):
+    el = [f'<rect width="{W}" height="{H}" fill="url(#bg)"/>']
+    el.append(text(W/2, H*0.20, "🏆", W*0.20, INK, 400))
+    el.append(text(W/2, H*0.29, "Good Dog!", W*0.10, INK, 900))
+    cx, cy, cw, ch = W*0.14, H*0.34, W*0.72, H*0.11
+    el.append(rrect(cx, cy, cw, ch, W*0.05, "#ffffff", filt="cardshadow"))
+    el.append(text(cx + W*0.05, cy + ch*0.42, "Time", W*0.036, INK_SOFT, 700, "start"))
+    el.append(text(cx + cw - W*0.05, cy + ch*0.46, "3:48", W*0.05, INK, 900, "end"))
+    el.append(rrect(cx + W*0.05, cy + ch*0.60, W*0.26, ch*0.28, ch*0.14, f"#{SUCCESS}"))
+    el.append(text(cx + W*0.18, cy + ch*0.60 + ch*0.20, "New best!", W*0.026, "FFFFFF", 800))
+    el.append(text(cx + cw - W*0.05, cy + ch*0.60 + ch*0.20, "No mistakes · no hints", W*0.026, SUCCESS, 700, "end"))
+    bw, bh = W*0.52, W*0.14
+    bx, by = (W - bw)/2, H*0.49
+    el.append(rrect(bx, by, bw, bh, bh/2, "url(#brand)", filt="btnshadow"))
+    el.append(text(W/2, by + bh*0.64, "🦴  +40 Bones", W*0.052, "FFFFFF", 900))
+    pr_y = H*0.62
+    for i, k in enumerate(["corgi", "golden", "poodle", "husky", "shiba"]):
+        el.append(place(k, W*0.18 + i*W*0.16, pr_y, W*0.14, (-6 + i*3)))
+    pw, ph = W*0.76, W*0.14
+    el.append(rrect((W-pw)/2, H*0.70, pw, ph, ph/2, "url(#brand)", filt="btnshadow"))
+    el.append(text(W/2, H*0.70 + ph*0.63, "Play Again", W*0.05, "FFFFFF", 900))
+    el.append(caption(W, "Earn Bones with every win", "Spend them on themes, hints &amp; more", y=H*0.84))
+    return wrap(W, H, el)
 
-def screen_achievements():
-    img,d = new_canvas()
-    caption(d, "Earn awards", "& climb Game Center leaderboards")
-    items=[("🐶","First Best Friend","Complete your first puzzle.",True),
-           ("🎾","Flawless Fetch","Win 5 with no mistakes or hints.",True),
-           ("🏆","Top Dog","Beat a 9×9 on Hard.",False),
-           ("🦴","Week of Walkies","Keep a 7-day streak.",True),
-           ("💨","Zoomies","Finish a 9×9 under 5 minutes.",False),
-           ("👑","Pack Leader","Win 50 puzzles.",False)]
-    y=430
-    for emo,name,desc,earned in items:
-        rrect(d,(140,y,1180,y+200),26,fill=CARD)
-        e = emo if earned else "🔒"
-        d.text((s(240), s(y+100)), e, font=font(FONT_EMOJI,70), fill=INK, anchor="mm", embedded_color=True)
-        d.text((s(340), s(y+72)), name, font=font(FONT_BLACK,50), fill=INK, anchor="lm")
-        d.text((s(340), s(y+135)), desc, font=font(FONT_BOLD,32), fill=INK_SOFT, anchor="lm")
-        if earned:
-            cx, cy, rr = s(1100), s(y+100), s(34)
-            d.ellipse([cx-rr,cy-rr,cx+rr,cy+rr], fill=SUCCESS)
-            lw = s(7)
-            d.line([(cx-s(15),cy),(cx-s(3),cy+s(14)),(cx+s(17),cy-s(15))],
-                   fill=Hx("FFFFFF"), width=lw, joint="curve")
-        y+=230
-    save(img,"5_achievements.png")
+def screen_themes(W, H):
+    el = [f'<rect width="{W}" height="{H}" fill="url(#bg)"/>',
+          caption(W, "Make it yours — ad-free", "Board themes, costumes &amp; Parade Pass")]
+    themes = [("Classic", REGIONS[:4]),
+              ("Midnight", ["5B6BA8", "4E8FA6", "5AA574", "B0668A"]),
+              ("Pastel Dream", ["F7C8DD", "C9E4F5", "D8F0C8", "F6E2B3"]),
+              ("Neon Pups", ["FF7AB6", "5BE0E6", "8CFF6B", "FFE24A"])]
+    y = H*0.235
+    cw, ch = W*0.40, W*0.34
+    gap = W*0.04
+    for i, (name, cols) in enumerate(themes):
+        col = i % 2
+        row = i // 2
+        x = W*0.08 + col * (cw + gap)
+        yy = y + row * (ch + gap)
+        el.append(rrect(x, yy, cw, ch, W*0.05, "#ffffff", filt="cardshadow"))
+        sw = (cw - W*0.09) / 2
+        for j, c in enumerate(cols):
+            sx = x + W*0.03 + (j % 2) * (sw + W*0.02)
+            sy = yy + W*0.03 + (j // 2) * (sw + W*0.02)
+            el.append(rrect(sx, sy, sw, sw, sw*0.22, f"#{c}"))
+        el.append(text(x + cw/2, yy + ch - W*0.03, name, W*0.030, INK, 800))
+    py = y + 2 * (ch + gap) + H*0.01
+    pw, ph = W*0.84, H*0.185
+    el.append(rrect(W*0.08, py, pw, ph, W*0.055, "url(#parade)", filt="cardshadow"))
+    el.append(text(W*0.14, py + ph*0.26, "🎉  Parade Pass", W*0.052, "FFFFFF", 900, "start"))
+    el.append(text(W*0.14, py + ph*0.46, "No ads · unlimited hints · every theme", W*0.030, "FFFFFF", 700, "start"))
+    chw, chh = W*0.30, W*0.11
+    el.append(rrect(W*0.08 + pw - chw - W*0.05, py + ph*0.60, chw, chh, chh/2, "#ffffff"))
+    el.append(text(W*0.08 + pw - chw/2 - W*0.05, py + ph*0.60 + chh*0.64, "Try it", W*0.036, PARADE_INK, 900))
+    return wrap(W, H, el)
+
+def wrap(W, H, el):
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" '
+            f'viewBox="0 0 {W} {H}">{defs()}' + "".join(el) + '</svg>')
+
+SCREENS = [("1_board", screen_board), ("2_deduce", screen_deduce),
+           ("3_difficulty", screen_difficulty), ("4_win", screen_win),
+           ("5_themes", screen_themes)]
+
+def html_wrap(svg):
+    return (f'<!doctype html><html><head><meta charset="utf-8">'
+            f'<style>*{{margin:0;padding:0}}html,body{{overflow:hidden}}</style></head>'
+            f'<body>{svg}</body></html>')
+
+def find_browser():
+    for p in [r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+              r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"]:
+        if os.path.exists(p):
+            return p
+    return None
 
 def main():
-    screen_board(); screen_home(); screen_difficulty(); screen_win(); screen_achievements()
+    browser = find_browser()
+    for label, (W, H) in SIZES.items():
+        out = os.path.join(OUTBASE, label)
+        os.makedirs(out, exist_ok=True)
+        for name, fn in SCREENS:
+            svg = fn(W, H)
+            with open(os.path.join(out, f"{name}.svg"), "w", encoding="utf-8") as f:
+                f.write(svg)
+            html_path = os.path.join(out, f"{name}.html")
+            with open(html_path, "w", encoding="utf-8") as f:
+                f.write(html_wrap(svg))
+            if browser:
+                png = os.path.join(out, f"{name}.png")
+                subprocess.run([browser, "--headless", "--disable-gpu", "--hide-scrollbars",
+                                "--force-device-scale-factor=1", f"--window-size={W},{H}",
+                                f"--screenshot={png}", "file:///" + html_path.replace("\\", "/")],
+                               check=False, capture_output=True)
+                print(("rendered " if os.path.exists(png) else "FAILED  ") + f"{label}/{name}.png")
+            else:
+                print("wrote", f"{label}/{name}.svg (no browser for PNG)")
 
 if __name__ == "__main__":
     main()
