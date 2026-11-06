@@ -13,7 +13,7 @@ Pupdoku: Puppy Puzzles
 Find the puppies — logic game
 
 ## Promotional Text  (max 170 — editable anytime without review)
-Freshly redrawn pups and a polished new look! Earn Bones, unlock board themes, grab seasonal costumes, or go ad-free with unlimited hints on the Parade Pass. Find the hidden puppies!
+Freshly redrawn pups and a polished new look! Earn Bones, unlock board themes, grab seasonal costumes, or go ad-free with unlimited hints on the Parade Pass.
 
 ## Keywords  (max 100, comma-separated, no spaces)
 brain,deduction,dogs,animal,pet,kids,family,daily,offline,relaxing,zen,queens,region,solver,star
@@ -69,6 +69,9 @@ A big visual refresh — Pupdoku has never looked this good!
 📐 Board-size previews — see each size before you pick a puzzle.
 
 Same cozy logic game, now with more polish. Thanks for playing!
+
+## What's New (Version 3.1.1)
+Say hello to a cheerful new animated splash when Pupdoku opens — plus polish and small fixes. Thanks for playing!
 
 ## App Review Notes
 No login or account is required — all features are accessible on launch.
