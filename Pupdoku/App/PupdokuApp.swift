@@ -14,6 +14,7 @@ struct PupdokuApp: App {
     @State private var music = MusicManager()
     @State private var gameCenter = GameCenterManager()
     @State private var cloud = CloudSync()
+    @State private var router = DeepLinkRouter()
 
     init() {
         let persistence = (try? Persistence()) ?? Persistence.inMemory()
@@ -31,8 +32,10 @@ struct PupdokuApp: App {
                 .environment(sound)
                 .environment(music)
                 .environment(gameCenter)
+                .environment(router)
                 .preferredColorScheme(.light)
                 .tint(Palette.accentDeep)
+                .onOpenURL { url in router.handle(url) }
                 .task {
                     // Sync feature toggles into the effect managers.
                     haptics.isEnabled = store.state.hapticsOn

@@ -7,6 +7,7 @@ struct HomeView: View {
     @Environment(GameStore.self) private var store
     @Environment(IAPManager.self) private var iap
     @Environment(HapticsManager.self) private var haptics
+    @Environment(DeepLinkRouter.self) private var router
 
     /// Single enum-driven sheet destination (more robust than several stacked
     /// `.sheet` modifiers, which can conflict on iOS).
@@ -86,6 +87,29 @@ struct HomeView: View {
             case .tip:          TipReminderView()
             }
         }
+        .onChange(of: router.pendingRoute) { _, route in
+            // Warm launch: the app was already open when the link was tapped.
+            consumeDeepLink(route)
+        }
+        .onAppear {
+            // Cold launch: a link set the route before Home appeared. Wait for
+            // the splash to fade out before presenting the sheet.
+            guard router.pendingRoute != nil else { return }
+            Task {
+                try? await Task.sleep(nanoseconds: 2_200_000_000)
+                consumeDeepLink(router.pendingRoute)
+            }
+        }
+    }
+
+    /// Opens the Shop when a `pupdoku://event…` deep link arrives (e.g. the App
+    /// Store Winter Pass In-App Event). Unknown or nil routes are ignored, and
+    /// onboarding / an active game are never interrupted.
+    private func consumeDeepLink(_ route: DeepLinkRouter.Route?) {
+        guard route == .shop else { return }
+        router.pendingRoute = nil
+        guard store.state.hasSeenOnboarding, !showGame else { return }
+        activeSheet = .shop
     }
 
     // MARK: - Pieces

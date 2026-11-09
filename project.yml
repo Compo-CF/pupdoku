@@ -37,7 +37,7 @@ targets:
       path: Generated/Info.plist
       properties:
         CFBundleDisplayName: Pupdoku
-        CFBundleShortVersionString: "3.1.1"
+        CFBundleShortVersionString: "3.1.2"
         # Build number comes from CURRENT_PROJECT_VERSION (scripts/testflight.sh passes the git commit count).
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         UILaunchScreen:
@@ -47,6 +47,11 @@ targets:
         NSUserTrackingUsageDescription: "Pupdoku uses your identifier to show more relevant ads and support the game."
         GADApplicationIdentifier: "ca-app-pub-1927040492403163~6044441811"
         ITSAppUsesNonExemptEncryption: false
+        CFBundleURLTypes:
+          - CFBundleTypeRole: Editor
+            CFBundleURLName: com.centricfiber.pupdoku
+            CFBundleURLSchemes:
+              - pupdoku
     settings:
       base:
         PRODUCT_NAME: Pupdoku
