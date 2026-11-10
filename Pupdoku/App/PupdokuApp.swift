@@ -15,6 +15,9 @@ struct PupdokuApp: App {
     @State private var gameCenter = GameCenterManager()
     @State private var cloud = CloudSync()
     @State private var router = DeepLinkRouter()
+    /// v3.2 — "More from After Hours Dev Studio" shelf. Seeded from bundled
+    /// JSON on init, refreshed from GitHub Pages on first appear + foreground.
+    @State private var studioShelf = StudioShelfProvider(selfID: "pupdoku")
 
     init() {
         let persistence = (try? Persistence()) ?? Persistence.inMemory()
@@ -33,6 +36,7 @@ struct PupdokuApp: App {
                 .environment(music)
                 .environment(gameCenter)
                 .environment(router)
+                .environment(studioShelf)
                 .preferredColorScheme(.light)
                 .tint(Palette.accentDeep)
                 .onOpenURL { url in router.handle(url) }
@@ -59,6 +63,8 @@ struct PupdokuApp: App {
                     // OnboardingView.finish(). Delay so no modal is presenting.
                     try? await Task.sleep(nanoseconds: 1_500_000_000)
                     await requestTrackingPermissionIfNeeded()
+                    // v3.2 — pull the latest studio shelf catalog once the UI has settled.
+                    await studioShelf.refresh()
                 }
                 .onChange(of: iap.removeAdsOwned) { _, owned in
                     ads.configure(removeAdsOwned: owned || iap.subscriptionActive)
@@ -102,6 +108,8 @@ struct PupdokuApp: App {
                 Task { await gameCenter.report(state: snapshot) }
             case .active:
                 music.start()
+                // v3.2 — refresh the studio shelf; the provider throttles itself.
+                Task { await studioShelf.refresh() }
             @unknown default:
                 break
             }

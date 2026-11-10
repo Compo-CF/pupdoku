@@ -1,0 +1,107 @@
+import SwiftUI
+
+/// v3.2 — Ported from Cosmica. Horizontal "More from After Hours Dev Studio"
+/// shelf for Pupdoku. Taps present `AppStoreProductSheet` so the user stays
+/// in Pupdoku.
+///
+/// Note: Cosmica's copy fires `ShopStats` impression/tap events. Pupdoku does
+/// not ship ShopStats (would require provisioning a CloudKit public `ShopDay`
+/// record type), so those calls are omitted here.
+struct StudioShelfView: View {
+    @Environment(StudioShelfProvider.self) private var provider
+
+    @State private var selectedGame: StudioGame?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            header
+            if provider.games.isEmpty {
+                emptyState
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(spacing: 12) {
+                        ForEach(provider.games) { game in
+                            card(game)
+                        }
+                    }
+                    .padding(.horizontal, 2)
+                }
+            }
+        }
+        .onAppear {
+            Task { await provider.refresh() }
+        }
+        .sheet(item: $selectedGame) { game in
+            AppStoreProductSheet(appStoreID: game.appStoreID)
+                .ignoresSafeArea()
+        }
+    }
+
+    private var header: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text("More from After Hours Dev Studio")
+                .font(.headline)
+                .foregroundStyle(.primary)
+            Spacer()
+        }
+    }
+
+    @ViewBuilder
+    private func card(_ game: StudioGame) -> some View {
+        Button {
+            selectedGame = game
+        } label: {
+            VStack(alignment: .leading, spacing: 8) {
+                icon(game)
+                Text(game.name)
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+                Text(game.tagline)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2, reservesSpace: true)
+            }
+            .padding(12)
+            .frame(width: 180, alignment: .leading)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(.primary.opacity(0.08), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func icon(_ game: StudioGame) -> some View {
+        AsyncImage(url: game.iconURL) { phase in
+            switch phase {
+            case .success(let image):
+                image.resizable().scaledToFill()
+            case .failure:
+                placeholderIcon
+            case .empty:
+                placeholderIcon
+                    .overlay(ProgressView().controlSize(.small))
+            @unknown default:
+                placeholderIcon
+            }
+        }
+        .frame(width: 72, height: 72)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    private var placeholderIcon: some View {
+        RoundedRectangle(cornerRadius: 16, style: .continuous)
+            .fill(.primary.opacity(0.08))
+    }
+
+    private var emptyState: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "sparkles")
+            Text("New games coming soon.")
+                .foregroundStyle(.secondary)
+        }
+        .font(.subheadline)
+        .frame(maxWidth: .infinity, minHeight: 72)
+    }
+}

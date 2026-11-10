@@ -37,7 +37,7 @@ targets:
       path: Generated/Info.plist
       properties:
         CFBundleDisplayName: Pupdoku
-        CFBundleShortVersionString: "3.1.2"
+        CFBundleShortVersionString: "3.2.0"
         # Build number comes from CURRENT_PROJECT_VERSION (scripts/testflight.sh passes the git commit count).
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         UILaunchScreen:

@@ -26,6 +26,10 @@ struct ShopView: View {
                     section("Hint Packs") { hintPacks }
                     if !iap.removeAdsOwned && !store.subscriptionActive { removeAds }
                     section("Tip the Developer") { tips }
+                    // v3.2 — cross-promo to the rest of the studio's games.
+                    // Tapping a card opens the App Store product page inline.
+                    StudioShelfView()
+                        .padding(.top, 4)
                     Button("Restore purchases") { Task { await iap.restore() } }
                         .font(.system(size: 14, weight: .semibold, design: .rounded))
                         .foregroundStyle(Palette.inkSoft).padding(.top, 4)

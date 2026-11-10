@@ -49,6 +49,20 @@ struct SettingsView: View {
                     Button("Hint packs & tips") { showShop = true }
                     Button("Restore purchases") { Task { await iap.restore() } }
                 }
+                // v3.2 — cross-promo to the rest of the studio's games. Full
+                // shelf is a push destination so Settings stays short; also
+                // appears inline at the bottom of the Shop tab.
+                Section("More from After Hours Dev Studio") {
+                    NavigationLink("Browse the studio") {
+                        ScrollView {
+                            StudioShelfView()
+                                .padding()
+                        }
+                        .navigationTitle("After Hours Dev Studio")
+                        .navigationBarTitleDisplayMode(.inline)
+                    }
+                }
+
                 Section("About") {
                     NavigationLink("Privacy Policy") { PrivacyPolicyView() }
                     NavigationLink("Terms of Service") { TermsOfServiceView() }
