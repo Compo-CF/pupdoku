@@ -52,7 +52,10 @@ struct SettingsView: View {
                 // v3.2 — cross-promo to the rest of the studio's games. Full
                 // shelf is a push destination so Settings stays short; also
                 // appears inline at the bottom of the Shop tab.
-                Section("More from After Hours Dev Studio") {
+                Section("After Hours Dev Studio") {
+                    Link(destination: URL(string: "https://compo-cf.github.io/afterhoursdevstudio/")!) {
+                        Label("More from After Hours Dev Studio", systemImage: "moon.stars.fill")
+                    }
                     NavigationLink("Browse the studio") {
                         ScrollView {
                             StudioShelfView()
@@ -71,6 +74,8 @@ struct SettingsView: View {
                         Spacer()
                         Text(appVersion).foregroundStyle(Palette.inkSoft)
                     }
+                    Text("Made by After Hours Dev Studio")
+                        .foregroundStyle(Palette.inkSoft)
                 }
                 Section {
                     Button("Reset progress", role: .destructive) { showResetConfirm = true }
