@@ -13,9 +13,9 @@ on:
         options: ["yes", "no"]
         default: "yes"
       xcode:
-        description: "Xcode version on the runner, e.g. 26.2 (26.6 fails, see below)"
+        description: "Xcode version on the runner, e.g. 26.2 (blank = newest)"
         type: string
-        default: "26.2"
+        default: ""
   push:
     tags: ["ios-v*"]
 concurrency:
@@ -32,9 +32,9 @@ jobs:
 
       - name: Select newest Xcode
         run: |
-          # Pinned to 26.2: Xcode 26.6 can't type-check Pupdoku/UI/DifficultySelectView.swift:90
-          # (MiniBoardPreview .position(...)) "in reasonable time". 26.2 built + uploaded 3.2.0 (35).
-          WANT="${{ github.event.inputs.xcode || '26.2' }}"
+          # Newest Xcode 26 by default. (Was pinned to 26.2 until MiniBoardPreview moved to Canvas,
+          # 2026-11-16: 26.6 couldn't type-check the old ForEach/.position version.)
+          WANT="${{ github.event.inputs.xcode }}"
           if [ -n "$WANT" ]; then X="/Applications/Xcode_$WANT.app"; else X="$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)"; fi
           [ -n "$X" ] || X="$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
           sudo xcode-select -s "$X"
@@ -75,9 +75,8 @@ jobs:
           python3 scripts/ci/asc_profile.py install "Pupdoku AppStore CI"
 
       - name: Build, sign, upload
-        # --skip-tests: on Xcode 26.6 the Debug simulator build failed at DifficultySelectView.swift:90
-        # (type-check timeout). Not yet tried on 26.2; drop the flag once tests are confirmed green.
-        run: bash scripts/ci/testflight-ci.sh --skip-tests ${{ github.event.inputs.upload == 'no' && '--no-upload' || '' }}
+        # Runs PupdokuTests on a simulator first, then archives.
+        run: bash scripts/ci/testflight-ci.sh ${{ github.event.inputs.upload == 'no' && '--no-upload' || '' }}
 
       - name: Logs on failure
         if: failure()

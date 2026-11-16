@@ -81,17 +81,20 @@ struct MiniBoardPreview: View {
 
     private var colors: [Color] { ThemeCatalog.theme(themeId).colors }
 
+    // Drawn with Canvas rather than nested ForEach + .position(...): the view-builder
+    // version made Xcode 26.6's type checker give up ("unable to type-check this
+    // expression in reasonable time"), which broke CI. Plain loops check instantly.
     var body: some View {
-        GeometryReader { geo in
-            let cell = geo.size.width / CGFloat(n)
-            ZStack(alignment: .topLeading) {
-                ForEach(0..<n, id: \.self) { r in
-                    ForEach(0..<n, id: \.self) { c in
-                        Rectangle()
-                            .fill(colors[(r + c) % colors.count])
-                            .frame(width: cell, height: cell)
-                            .position(x: cell * CGFloat(c) + cell / 2, y: cell * CGFloat(r) + cell / 2)
-                    }
+        Canvas { ctx, size in
+            let palette = colors
+            guard n > 0, !palette.isEmpty else { return }
+            let cell: CGFloat = size.width / CGFloat(n)
+            for r in 0..<n {
+                for c in 0..<n {
+                    // +0.5 overlap hides antialiasing seams between neighbouring cells.
+                    let rect = CGRect(x: cell * CGFloat(c), y: cell * CGFloat(r),
+                                      width: cell + 0.5, height: cell + 0.5)
+                    ctx.fill(Path(rect), with: .color(palette[(r + c) % palette.count]))
                 }
             }
         }
