@@ -56,7 +56,11 @@ targets:
       base:
         PRODUCT_NAME: Pupdoku
         PRODUCT_BUNDLE_IDENTIFIER: com.centricfiber.pupdoku
+        # Pinned per target: XcodeGen 2.46 (CI) defaults iOS app targets to iPhone+iPad. Pupdoku is iPhone-only.
+        TARGETED_DEVICE_FAMILY: "1"
         CODE_SIGN_STYLE: Automatic
+        # CI only (scripts/ci/testflight-ci.sh): empty on the Mac, so automatic signing is untouched.
+        PROVISIONING_PROFILE_SPECIFIER: "$(PUPDOKU_APP_PROFILE)"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         GENERATE_INFOPLIST_FILE: NO
