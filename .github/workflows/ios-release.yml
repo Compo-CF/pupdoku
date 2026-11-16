@@ -13,9 +13,9 @@ on:
         options: ["yes", "no"]
         default: "yes"
       xcode:
-        description: "Xcode version on the runner (e.g. 26.2); empty = newest Xcode_26"
+        description: "Xcode version on the runner; empty = newest Xcode_26 (26.6 fails, see below)"
         type: string
-        default: ""
+        default: "26.2"
   push:
     tags: ["ios-v*"]
 concurrency:
@@ -32,7 +32,9 @@ jobs:
 
       - name: Select newest Xcode
         run: |
-          WANT="${{ github.event.inputs.xcode }}"
+          # Pinned to 26.2: Xcode 26.6 can't type-check Pupdoku/UI/DifficultySelectView.swift:90
+          # (MiniBoardPreview .position(...)) "in reasonable time". 26.2 built + uploaded 3.2.0 (35).
+          WANT="${{ github.event.inputs.xcode || '26.2' }}"
           if [ -n "$WANT" ]; then X="/Applications/Xcode_$WANT.app"; else X="$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)"; fi
           [ -n "$X" ] || X="$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
           sudo xcode-select -s "$X"
@@ -73,9 +75,8 @@ jobs:
           python3 scripts/ci/asc_profile.py install "Pupdoku AppStore CI"
 
       - name: Build, sign, upload
-        # --skip-tests: the Debug simulator build of PupdokuTests fails on the runner's Xcode 26
-        # (DifficultySelectView.swift:90 "unable to type-check this expression in reasonable time").
-        # Drop the flag once that expression is split up. Release archive is unaffected.
+        # --skip-tests: on Xcode 26.6 the Debug simulator build failed at DifficultySelectView.swift:90
+        # (type-check timeout). Not yet tried on 26.2; drop the flag once tests are confirmed green.
         run: bash scripts/ci/testflight-ci.sh --skip-tests ${{ github.event.inputs.upload == 'no' && '--no-upload' || '' }}
 
       - name: Logs on failure
