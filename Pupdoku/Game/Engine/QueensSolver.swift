@@ -29,6 +29,26 @@ enum QueensSolver {
         return count
     }
 
+    /// Any solution whose columns differ from `other`, or nil if `other` is the only one.
+    static func solution(n: Int, regionOf: [Int], otherThan other: [Int]) -> [Int]? {
+        var usedCols = [Bool](repeating: false, count: n)
+        var usedRegions = [Bool](repeating: false, count: n)
+        var cols = [Int](repeating: 0, count: n)
+        func recurse(row: Int, prevCol: Int) -> Bool {
+            if row == n { return cols != other }
+            for col in 0..<n where !usedCols[col] {
+                if row > 0 && abs(col - prevCol) < 2 { continue }
+                let region = regionOf[row * n + col]
+                if usedRegions[region] { continue }
+                usedCols[col] = true; usedRegions[region] = true; cols[row] = col
+                if recurse(row: row + 1, prevCol: col) { return true }
+                usedCols[col] = false; usedRegions[region] = false
+            }
+            return false
+        }
+        return recurse(row: 0, prevCol: -5) ? cols : nil
+    }
+
     /// Returns the per-row solution columns, or nil if unsolvable.
     static func solve(n: Int, regionOf: [Int]) -> [Int]? {
         var usedCols = [Bool](repeating: false, count: n)
