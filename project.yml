@@ -87,3 +87,5 @@ targets:
     settings:
       base:
         PRODUCT_NAME: PupdokuTests
+        # The test bundle has no Info.plist of its own; signing it (CI ad-hoc simulator run) needs one.
+        GENERATE_INFOPLIST_FILE: YES
