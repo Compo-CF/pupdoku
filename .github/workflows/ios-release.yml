@@ -13,7 +13,7 @@ on:
         options: ["yes", "no"]
         default: "yes"
       xcode:
-        description: "Xcode version on the runner; empty = newest Xcode_26 (26.6 fails, see below)"
+        description: "Xcode version on the runner, e.g. 26.2 (26.6 fails, see below)"
         type: string
         default: "26.2"
   push:
