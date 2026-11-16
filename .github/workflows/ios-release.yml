@@ -12,6 +12,10 @@ on:
         type: choice
         options: ["yes", "no"]
         default: "yes"
+      xcode:
+        description: "Xcode version on the runner (e.g. 26.2); empty = newest Xcode_26"
+        type: string
+        default: ""
   push:
     tags: ["ios-v*"]
 concurrency:
@@ -28,7 +32,8 @@ jobs:
 
       - name: Select newest Xcode
         run: |
-          X="$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)"
+          WANT="${{ github.event.inputs.xcode }}"
+          if [ -n "$WANT" ]; then X="/Applications/Xcode_$WANT.app"; else X="$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)"; fi
           [ -n "$X" ] || X="$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
           sudo xcode-select -s "$X"
           xcodebuild -version
