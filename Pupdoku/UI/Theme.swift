@@ -69,10 +69,7 @@ enum Gradients {
 
 extension View {
     func pupBackground() -> some View {
-        background(
-            LinearGradient(colors: [Palette.bgTop, Palette.bgBottom], startPoint: .top, endPoint: .bottom)
-                .ignoresSafeArea()
-        )
+        background(PupBackground())
     }
     func pupCard(padding: CGFloat = 16, radius: CGFloat = 20) -> some View {
         self.padding(padding)

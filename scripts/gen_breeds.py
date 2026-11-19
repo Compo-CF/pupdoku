@@ -51,14 +51,30 @@ def lighten(hex_color, amt=0.42):
     r = int(r + (255 - r) * amt); g = int(g + (255 - g) * amt); b = int(b + (255 - b) * amt)
     return f"#{r:02X}{g:02X}{b:02X}"
 
+def darken(hex_color, amt=0.22):
+    """Blend a #RRGGBB color toward black by `amt` — used for the lower form shade
+    that gives the head volume. Flat shapes only (see `lighten`)."""
+    h = hex_color.lstrip("#")
+    r, g, b = (int(h[i:i+2], 16) for i in (0, 2, 4))
+    r = int(r * (1 - amt)); g = int(g * (1 - amt)); b = int(b * (1 - amt))
+    return f"#{r:02X}{g:02X}{b:02X}"
+
 def ground_shadow():
-    """Soft contact shadow under the pup so it reads as sitting on the tile."""
-    return f'<ellipse cx="{CX}" cy="222" rx="64" ry="12" fill="#00000022"/>'
+    """Soft contact shadow under the pup — a wide soft base plus a tighter, darker
+    core so it reads as sitting on the tile rather than floating."""
+    return (f'<ellipse cx="{CX}" cy="223" rx="70" ry="14" fill="#0000001A"/>'
+            f'<ellipse cx="{CX}" cy="224" rx="46" ry="9" fill="#00000026"/>')
 
 def head(fur):
-    # Base head, then a lighter upper-left sheen for a lit-from-above, rounded look.
-    return (f'<ellipse cx="{CX}" cy="{CY}" rx="{HRX}" ry="{HRY}" fill="{fur}" stroke="#00000018" stroke-width="2"/>'
-            f'<ellipse cx="{CX-16}" cy="{CY-22}" rx="46" ry="34" fill="{lighten(fur)}" opacity="0.45"/>')
+    # Volumetric head from flat layers (importer-safe, no gradients):
+    #   base fill -> lower-right form shade -> upper-left sheen -> crisp rim light.
+    return (f'<ellipse cx="{CX}" cy="{CY}" rx="{HRX}" ry="{HRY}" fill="{fur}" stroke="#00000020" stroke-width="2"/>'
+            # lower form shade: darker crescent along the bottom edge for roundness
+            f'<ellipse cx="{CX+10}" cy="{CY+30}" rx="60" ry="38" fill="{darken(fur)}" opacity="0.20"/>'
+            # upper-left sheen: the big soft lit area
+            f'<ellipse cx="{CX-16}" cy="{CY-22}" rx="46" ry="34" fill="{lighten(fur)}" opacity="0.48"/>'
+            # rim light: a small bright specular toward the light source
+            f'<ellipse cx="{CX-40}" cy="{CY-40}" rx="16" ry="11" fill="{lighten(fur, 0.72)}" opacity="0.55"/>')
 
 def eyes(blue=False, mask=False):
     pupil = "#25303B" if blue else "#2B2B2B"
@@ -68,10 +84,10 @@ def eyes(blue=False, mask=False):
                 f'<circle cx="{CX+EYE_DX}" cy="{EYE_Y}" r="{EYE_R}" fill="#5AA9E6"/>'
                 f'<circle cx="{CX-EYE_DX}" cy="{EYE_Y}" r="6.5" fill="#20313F"/>'
                 f'<circle cx="{CX+EYE_DX}" cy="{EYE_Y}" r="6.5" fill="#20313F"/>')
-    hi = (f'<circle cx="{CX-EYE_DX+4}" cy="{EYE_Y-4}" r="4.2" fill="#FFFFFF"/>'
-          f'<circle cx="{CX+EYE_DX+4}" cy="{EYE_Y-4}" r="4.2" fill="#FFFFFF"/>'
-          f'<circle cx="{CX-EYE_DX-4}" cy="{EYE_Y+4}" r="1.8" fill="#FFFFFF" opacity="0.7"/>'
-          f'<circle cx="{CX+EYE_DX-4}" cy="{EYE_Y+4}" r="1.8" fill="#FFFFFF" opacity="0.7"/>')
+    hi = (f'<circle cx="{CX-EYE_DX+4}" cy="{EYE_Y-4}" r="5" fill="#FFFFFF"/>'
+          f'<circle cx="{CX+EYE_DX+4}" cy="{EYE_Y-4}" r="5" fill="#FFFFFF"/>'
+          f'<circle cx="{CX-EYE_DX-4}" cy="{EYE_Y+5}" r="2.3" fill="#FFFFFF" opacity="0.8"/>'
+          f'<circle cx="{CX+EYE_DX-4}" cy="{EYE_Y+5}" r="2.3" fill="#FFFFFF" opacity="0.8"/>')
     return iris + hi
 
 def muzzle(color):
