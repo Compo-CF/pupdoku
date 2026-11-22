@@ -11,7 +11,7 @@ struct ShopView: View {
     @State private var showThemes = false
 
     private let termsURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
-    private let privacyURL = URL(string: "https://compo-cf.github.io/pupdoku/privacy.html")!
+    private let privacyURL = URL(string: "https://afterhoursdevstudio.com/pupdoku/privacy/")!
 
     var body: some View {
         NavigationStack {
