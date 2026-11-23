@@ -146,7 +146,7 @@ struct GameState: Codable, Equatable {
                 ownedThemes.insert(c.rewardThemeId)
                 bones += c.rewardBones
                 lastWinBones += c.rewardBones
-                lastChallengeNote = "\(c.emoji) \(c.name) complete! Confetti theme unlocked"
+                lastChallengeNote = "\(c.emoji) \(c.name) complete! \(ThemeCatalog.theme(c.rewardThemeId).name) theme unlocked"
             } else if !isChallengeComplete(c) {
                 lastChallengeNote = "\(c.emoji) \(c.name): \(progress)/\(c.goal) Dailies"
             }

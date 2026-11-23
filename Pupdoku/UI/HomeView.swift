@@ -137,7 +137,7 @@ struct HomeView: View {
         let done = store.state.isChallengeComplete(c)
         let subtitle: String
         if c.isUpcoming(today: today) { subtitle = "Starts \(c.dateLabel.components(separatedBy: " - ").first ?? c.dateLabel) · solve \(c.goal) Dailies" }
-        else if done { subtitle = "Complete! Confetti theme unlocked" }
+        else if done { subtitle = "Complete! \(ThemeCatalog.theme(c.rewardThemeId).name) theme unlocked" }
         else { subtitle = "\(progress)/\(c.goal) Dailies · \(c.daysLeft(today: today)) days left" }
         return Button {
             haptics.select(); challengeForSheet = c; activeSheet = .challenge

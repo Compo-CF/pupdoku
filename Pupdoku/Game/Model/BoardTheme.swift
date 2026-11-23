@@ -36,6 +36,9 @@ enum ThemeCatalog {
         BoardTheme(id: "confetti", name: "New Year Confetti", priceBones: 0, eventPassId: nil, hexes: [
             "F7C948","7FB8F0","F49AC1","8EDB9E","B79CF2","FFB36B","6FD3D1","F27B7B","E9D8A6"],
                    challengeId: "challenge.newyear2027", costumeId: "newyear"),
+        BoardTheme(id: "puppylove", name: "Puppy Love", priceBones: 0, eventPassId: nil, hexes: [
+            "F7A8B8","FBD3DC","E8586E","F9C6A8","D98FC0","FFE1E8","C7466A","F4B6C9","FADADD"],
+                   challengeId: "challenge.puppylove2027", costumeId: "valentine"),
     ]
 
     static func theme(_ id: String) -> BoardTheme { all.first { $0.id == id } ?? all[0] }

@@ -19,6 +19,9 @@ struct EventChallenge: Identifiable, Equatable {
     let rewardBones: Int
     let deepLinkHost: String      // pupdoku://event/<deepLinkHost>
     let dateLabel: String
+    let shortLabel: String        // lock label on the theme card, e.g. "Jan Challenge"
+    let costumeLabel: String      // e.g. "party-hat puppies"
+    let blurb: String             // opening line of the challenge sheet
 
     func isActive(today: Int) -> Bool { today >= startEpochDay && today < endEpochDay }
     func isUpcoming(today: Int) -> Bool { today < startEpochDay }
@@ -39,9 +42,30 @@ enum EventChallengeCatalog {
         rewardCostumeId: "newyear",
         rewardBones: 300,
         deepLinkHost: "newyear",
-        dateLabel: "Jan 4 - Jan 31")
+        dateLabel: "Jan 4 - Jan 31",
+        shortLabel: "Jan Challenge",
+        costumeLabel: "party-hat puppies",
+        blurb: "Ring in the new year with the pack.")
 
-    static let all: [EventChallenge] = [newYear2027]
+    /// Feb 1 2027 (epoch day 20850) through Feb 28 2027 (end-exclusive 20878),
+    /// starting the day the New Year Pup Challenge ends.
+    static let puppyLove2027 = EventChallenge(
+        id: "challenge.puppylove2027",
+        name: "Puppy Love Challenge",
+        emoji: "💕",
+        startEpochDay: 20850,
+        endEpochDay: 20878,
+        goal: 10,
+        rewardThemeId: "puppylove",
+        rewardCostumeId: "valentine",
+        rewardBones: 300,
+        deepLinkHost: "puppylove",
+        dateLabel: "Feb 1 - Feb 28",
+        shortLabel: "Feb Challenge",
+        costumeLabel: "heart-headband puppies",
+        blurb: "Share the love with the pack this February.")
+
+    static let all: [EventChallenge] = [newYear2027, puppyLove2027]
 
     static func challenge(_ id: String) -> EventChallenge? { all.first { $0.id == id } }
     /// The challenge to feature on Home today: the open one, else the next upcoming.

@@ -48,7 +48,18 @@ def party_hat():
   <circle cx="178" cy="70" r="3.5" fill="#F49AC1"/>
   <circle cx="60" cy="74" r="3.5" fill="#F7C948"/>'''
 
-COSTUMES = {"spooky": witch_hat, "winter": santa_hat, "newyear": party_hat}
+def heart_headband():
+    # Valentine: red headband with two springy heart boppers.
+    return f'''
+  <path d="M62 104 Q120 58 178 104" fill="none" stroke="#C7466A" stroke-width="12" stroke-linecap="round"/>
+  <path d="M96 78 Q88 52 80 34" fill="none" stroke="#C7466A" stroke-width="4" stroke-linecap="round"/>
+  <path d="M144 78 Q152 52 160 34" fill="none" stroke="#C7466A" stroke-width="4" stroke-linecap="round"/>
+  <path d="M80 44 C62 30 56 12 70 6 C78 3 80 10 80 14 C80 10 82 3 90 6 C104 12 98 30 80 44 Z" fill="#E8586E" stroke="#B03A55" stroke-width="2"/>
+  <path d="M160 44 C142 30 136 12 150 6 C158 3 160 10 160 14 C160 10 162 3 170 6 C184 12 178 30 160 44 Z" fill="#F7A8B8" stroke="#B03A55" stroke-width="2"/>
+  <circle cx="70" cy="14" r="3" fill="#FFFFFF" opacity="0.8"/>
+  <circle cx="150" cy="14" r="3" fill="#FFFFFF" opacity="0.8"/>'''
+
+COSTUMES = {"spooky": witch_hat, "winter": santa_hat, "newyear": party_hat, "valentine": heart_headband}
 
 def contents(fn):
     return json.dumps({

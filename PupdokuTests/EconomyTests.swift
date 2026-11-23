@@ -183,4 +183,20 @@ final class EconomyTests: XCTestCase {
         r.handle(URL(string: "pupdoku://event/winter")!)
         XCTAssertEqual(r.pendingRoute, .shop)
     }
+
+    func testPuppyLoveFollowsNewYearWithoutOverlap() {
+        let ny = EventChallengeCatalog.newYear2027, pl = EventChallengeCatalog.puppyLove2027
+        XCTAssertEqual(pl.startEpochDay, ny.endEpochDay)
+        XCTAssertEqual(EventChallengeCatalog.featured(today: ny.endEpochDay - 1)?.id, ny.id)
+        XCTAssertEqual(EventChallengeCatalog.featured(today: pl.startEpochDay)?.id, pl.id)
+        var s = GameState()
+        let spec = PuzzleSpec(difficulty: .easy)
+        _ = s.recordWin(spec: spec, elapsed: 60, mistakes: 0, hintsUsed: 0, isDaily: true, todayEpochDay: pl.startEpochDay)
+        XCTAssertEqual(s.challengeProgress(pl), 1)
+        XCTAssertEqual(s.challengeProgress(ny), 0)
+        XCTAssertEqual(ThemeCatalog.costumeId(for: pl.rewardThemeId), "valentine")
+        let r = DeepLinkRouter()
+        r.handle(URL(string: "pupdoku://event/puppylove")!)
+        XCTAssertEqual(r.pendingRoute, .challenge(pl.id))
+    }
 }

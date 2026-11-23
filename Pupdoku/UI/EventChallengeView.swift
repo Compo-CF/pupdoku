@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// The New Year Pup Challenge sheet (App Store In-App Event destination for
-/// `pupdoku://event/newyear`). Explains the challenge, shows progress as a row
-/// of paw stamps, previews the reward (Confetti theme + party-hat pup), and
+/// An Event Challenge sheet (App Store In-App Event destination for
+/// `pupdoku://event/newyear` and `pupdoku://event/puppylove`). Explains the challenge, shows progress as a row
+/// of paw stamps, previews the reward (theme + costumed pup), and
 /// starts today's Daily Puzzle.
 struct EventChallengeView: View {
     let challenge: EventChallenge
@@ -30,7 +30,7 @@ struct EventChallengeView: View {
                     Text(challenge.dateLabel)
                         .font(.system(size: 14, weight: .heavy, design: .rounded))
                         .foregroundStyle(Palette.inkSoft)
-                    Text("Ring in the new year with the pack. Solve \(challenge.goal) Daily Puzzles during the challenge to earn the New Year Confetti board theme, party-hat puppies and \(challenge.rewardBones) Bones. Free for everyone, no pass needed.")
+                    Text("\(challenge.blurb) Solve \(challenge.goal) Daily Puzzles during the challenge to earn the \(theme.name) board theme, \(challenge.costumeLabel) and \(challenge.rewardBones) Bones. Free for everyone, no pass needed.")
                         .multilineTextAlignment(.center)
                         .font(.system(size: 15, weight: .medium, design: .rounded))
                         .foregroundStyle(Palette.inkSoft)
@@ -71,7 +71,7 @@ struct EventChallengeView: View {
                             }
                             .frame(width: 96)
                         }
-                        Text("\(theme.name) theme · party hats · 🦴 \(challenge.rewardBones)")
+                        Text("\(theme.name) theme · \(challenge.costumeLabel) · 🦴 \(challenge.rewardBones)")
                             .font(.system(size: 13, weight: .semibold, design: .rounded))
                             .foregroundStyle(Palette.ink)
                     }
