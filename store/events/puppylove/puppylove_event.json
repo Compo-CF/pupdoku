@@ -1,0 +1,24 @@
+{
+  "_doc": "In-App Event spec for ~/Neatly/scripts/asc/app_event.py. Times UTC; the challenge window in code (EventChallenge.swift puppyLove2027) is UTC epoch days 20850..20877 = Feb 1 00:00Z - Mar 1 00:00Z 2027. Needs build 46 (3.3.1)+ for the deep link.",
+  "app_id": "6797896315",
+  "referenceName": "Puppy Love Challenge 2027",
+  "badge": "CHALLENGE",
+  "purpose": "APPROPRIATE_FOR_ALL_USERS",
+  "priority": "HIGH",
+  "purchaseRequirement": "NO_COST_ASSOCIATED",
+  "primaryLocale": "en-US",
+  "deepLink": "pupdoku://event/puppylove",
+  "publishStart": "2027-01-18T08:00:00Z",
+  "eventStart": "2027-02-01T00:00:00Z",
+  "eventEnd": "2027-03-01T00:00:00Z",
+  "localization": {
+    "locale": "en-US",
+    "name": "Puppy Love Challenge",
+    "shortDescription": "Solve 10 Dailies for heart-headband pups",
+    "longDescription": "Solve 10 Daily Puzzles in February to earn the free Puppy Love board, heart-headband pups and 300 Bones."
+  },
+  "media": {
+    "EVENT_CARD": "card_1920x1080.png",
+    "EVENT_DETAILS_PAGE": "details_1080x1920.png"
+  }
+}
