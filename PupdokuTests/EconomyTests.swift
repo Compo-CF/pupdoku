@@ -128,4 +128,59 @@ final class EconomyTests: XCTestCase {
         XCTAssertTrue(store.useHintWithBones())
         XCTAssertEqual(store.bones, 50 - GameStore.hintBonesCost)
     }
+
+    // MARK: - Event Challenge (New Year Pup Challenge, 3.3)
+
+    func testChallengeCountsOnlyInWindowAndOncePerDay() {
+        let c = EventChallengeCatalog.newYear2027
+        var s = GameState()
+        let spec = PuzzleSpec(difficulty: .medium)
+        _ = s.recordWin(spec: spec, elapsed: 60, mistakes: 0, hintsUsed: 0, isDaily: true, todayEpochDay: c.startEpochDay - 1)
+        XCTAssertEqual(s.challengeProgress(c), 0)
+        _ = s.recordWin(spec: spec, elapsed: 60, mistakes: 0, hintsUsed: 0, isDaily: true, todayEpochDay: c.startEpochDay)
+        _ = s.recordWin(spec: spec, elapsed: 60, mistakes: 0, hintsUsed: 0, isDaily: true, todayEpochDay: c.startEpochDay)
+        _ = s.recordWin(spec: spec, elapsed: 60, mistakes: 0, hintsUsed: 0, isDaily: false, todayEpochDay: c.startEpochDay + 1)
+        XCTAssertEqual(s.challengeProgress(c), 1)
+        _ = s.recordWin(spec: spec, elapsed: 60, mistakes: 0, hintsUsed: 0, isDaily: true, todayEpochDay: c.endEpochDay)
+        XCTAssertEqual(s.challengeProgress(c), 1)
+    }
+
+    func testChallengeRewardGrantedOnceAtGoal() {
+        let c = EventChallengeCatalog.newYear2027
+        var s = GameState()
+        let spec = PuzzleSpec(difficulty: .medium)
+        for d in 0..<(c.goal - 1) {
+            _ = s.recordWin(spec: spec, elapsed: 60, mistakes: 0, hintsUsed: 0, isDaily: true, todayEpochDay: c.startEpochDay + d)
+        }
+        XCTAssertFalse(s.ownedThemes.contains(c.rewardThemeId))
+        let before = s.bones
+        _ = s.recordWin(spec: spec, elapsed: 60, mistakes: 0, hintsUsed: 0, isDaily: true, todayEpochDay: c.startEpochDay + c.goal)
+        XCTAssertTrue(s.isChallengeComplete(c))
+        XCTAssertTrue(s.ownedThemes.contains(c.rewardThemeId))
+        let daily = GameState.bonesForWin(spec: spec, mistakes: 0, hintsUsed: 0, isDaily: true)
+        XCTAssertEqual(s.bones, before + daily + c.rewardBones)
+        let after = s.bones
+        _ = s.recordWin(spec: spec, elapsed: 60, mistakes: 0, hintsUsed: 0, isDaily: true, todayEpochDay: c.startEpochDay + c.goal + 1)
+        XCTAssertEqual(s.bones, after + daily)   // no second reward
+        XCTAssertEqual(ThemeCatalog.costumeId(for: c.rewardThemeId), "newyear")
+    }
+
+    func testOldSaveWithoutChallengeKeysStillDecodes() throws {
+        var legacy = GameState()
+        legacy.bones = 42
+        var json = try JSONSerialization.jsonObject(with: JSONEncoder().encode(legacy)) as! [String: Any]
+        json.removeValue(forKey: "challengeDays"); json.removeValue(forKey: "completedChallenges"); json.removeValue(forKey: "lastChallengeNote")
+        let data = try JSONSerialization.data(withJSONObject: json)
+        let decoded = try JSONDecoder().decode(GameState.self, from: data)
+        XCTAssertEqual(decoded.bones, 42)
+    }
+
+    func testNewYearDeepLinkRoutesToChallenge() {
+        let r = DeepLinkRouter()
+        r.handle(URL(string: "pupdoku://event/newyear")!)
+        XCTAssertEqual(r.pendingRoute, .challenge("challenge.newyear2027"))
+        r.pendingRoute = nil
+        r.handle(URL(string: "pupdoku://event/winter")!)
+        XCTAssertEqual(r.pendingRoute, .shop)
+    }
 }

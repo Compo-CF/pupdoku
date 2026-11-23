@@ -7,14 +7,17 @@ import SwiftUI
 /// `CFBundleURLTypes`). `PupdokuApp`'s `.onOpenURL` feeds links here, and
 /// `HomeView` observes `pendingRoute` to present the matching screen.
 ///
-/// Example: the Winter Pass event uses `pupdoku://event/winter`, which opens the
-/// Shop (where the Winter Pass and cosmetics live). Unknown links still bring the
-/// app to the foreground without error.
+/// Examples: the Winter Pass event uses `pupdoku://event/winter`, which opens the
+/// Shop (where the Winter Pass and cosmetics live). The New Year Pup Challenge
+/// event uses `pupdoku://event/newyear`, which opens the challenge card. Unknown
+/// links still bring the app to the foreground without error.
 @Observable
 final class DeepLinkRouter {
     enum Route: Equatable {
         /// Open the Shop (passes, Bones, and cosmetics).
         case shop
+        /// Open an Event Challenge sheet (Daily Puzzle challenge).
+        case challenge(String)
     }
 
     /// Set when a deep link arrives; a view consumes it and resets it to nil.
@@ -23,7 +26,13 @@ final class DeepLinkRouter {
     /// Parse a `pupdoku://…` URL into a route. Non-matching links are ignored.
     func handle(_ url: URL) {
         guard url.scheme?.lowercased() == "pupdoku" else { return }
-        switch url.host?.lowercased() {
+        let host = url.host?.lowercased() ?? ""
+        let leaf = url.pathComponents.last?.lowercased() ?? ""
+        if let c = EventChallengeCatalog.all.first(where: { $0.deepLinkHost == host || (host == "event" && $0.deepLinkHost == leaf) }) {
+            pendingRoute = .challenge(c.id)
+            return
+        }
+        switch host {
         case "event", "shop", "winter":
             pendingRoute = .shop
         default:

@@ -12,6 +12,8 @@ struct WinView: View {
     let bonesEarned: Int
     let bestTime: TimeInterval?
     let newlyUnlocked: [String]
+    /// Event Challenge progress line (e.g. "New Year Pup Challenge: 3/10 Dailies").
+    var challengeNote: String? = nil
     let onPlayAgain: () -> Void
     let onHome: () -> Void
 
@@ -69,6 +71,17 @@ struct WinView: View {
             }
             .pupCard()
             .padding(.horizontal, 32)
+
+            if let challengeNote {
+                Text(challengeNote)
+                    .font(.system(size: 14, weight: .heavy, design: .rounded))
+                    .foregroundStyle(Palette.ink)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 16).padding(.vertical, 10)
+                    .background(Palette.card, in: Capsule())
+                    .overlay(Capsule().stroke(Palette.accent.opacity(0.5), lineWidth: 1.5))
+                    .padding(.horizontal, 32)
+            }
 
             if !newlyUnlocked.isEmpty {
                 VStack(spacing: 8) {

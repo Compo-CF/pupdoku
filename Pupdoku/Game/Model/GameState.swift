@@ -32,6 +32,16 @@ struct GameState: Codable, Equatable {
     /// Bones awarded by the most recent win (for the win screen).
     var lastWinBones: Int = 0
 
+    // MARK: - Event challenges (3.3)
+    // Optional so saves written by older versions still decode (synthesized
+    // Codable requires every non-optional key).
+    /// challenge id -> UTC epoch days on which a Daily was solved inside its window.
+    var challengeDays: [String: [Int]]?
+    /// challenge ids whose reward has been granted.
+    var completedChallenges: Set<String>?
+    /// Set by the most recent win when it counted toward a challenge (win screen).
+    var lastChallengeNote: String?
+
     // MARK: - Achievements
     var unlockedAchievements: Set<String> = []
 
@@ -98,7 +108,11 @@ struct GameState: Codable, Equatable {
         bones += earned
         lastWinBones = earned
 
-        if isDaily { recordDailyCompletion(todayEpochDay: todayEpochDay) }
+        lastChallengeNote = nil
+        if isDaily {
+            recordDailyCompletion(todayEpochDay: todayEpochDay)
+            recordChallengeDaily(todayEpochDay: todayEpochDay)
+        }
         savedGame = nil
         return AchievementCatalog.evaluate(into: &self)
     }
@@ -108,6 +122,35 @@ struct GameState: Codable, Equatable {
         dailyStreak = (todayEpochDay == lastDailyEpochDay + 1) ? dailyStreak + 1 : 1
         lastDailyEpochDay = todayEpochDay
         longestDailyStreak = max(longestDailyStreak, dailyStreak)
+    }
+
+    // MARK: - Event challenges
+    func challengeProgress(_ c: EventChallenge) -> Int { min(c.goal, Set(challengeDays?[c.id] ?? []).count) }
+    func isChallengeComplete(_ c: EventChallenge) -> Bool { completedChallenges?.contains(c.id) ?? false }
+
+    /// Counts today's Daily toward every open challenge (once per UTC day) and
+    /// grants the reward the first time the goal is reached.
+    private mutating func recordChallengeDaily(todayEpochDay: Int) {
+        for c in EventChallengeCatalog.all where c.isActive(today: todayEpochDay) {
+            var days = Set(challengeDays?[c.id] ?? [])
+            guard !days.contains(todayEpochDay) else { continue }
+            days.insert(todayEpochDay)
+            var map = challengeDays ?? [:]
+            map[c.id] = days.sorted()
+            challengeDays = map
+            let progress = min(c.goal, days.count)
+            if progress >= c.goal && !isChallengeComplete(c) {
+                var done = completedChallenges ?? []
+                done.insert(c.id)
+                completedChallenges = done
+                ownedThemes.insert(c.rewardThemeId)
+                bones += c.rewardBones
+                lastWinBones += c.rewardBones
+                lastChallengeNote = "\(c.emoji) \(c.name) complete! Confetti theme unlocked"
+            } else if !isChallengeComplete(c) {
+                lastChallengeNote = "\(c.emoji) \(c.name): \(progress)/\(c.goal) Dailies"
+            }
+        }
     }
 
     mutating func expireDailyStreakIfStale(todayEpochDay: Int) {

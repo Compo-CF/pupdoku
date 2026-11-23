@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// Cosmetics picker: preview, buy (with Bones), and select board themes. Event
-/// themes (Spooky/Winter) are unlocked by their Event Pass in the Shop.
+/// themes (Spooky/Winter) are unlocked by their Event Pass in the Shop; the
+/// New Year Confetti theme is earned by finishing the New Year Pup Challenge.
 struct ThemesView: View {
     @Environment(GameStore.self) private var store
     @Environment(HapticsManager.self) private var haptics
@@ -38,7 +39,7 @@ struct ThemesView: View {
     private func card(_ theme: BoardTheme) -> some View {
         let owned = store.ownsTheme(theme.id)
         let selected = store.selectedThemeId == theme.id
-        let eventLocked = theme.eventPassId != nil && !owned
+        let eventLocked = (theme.eventPassId != nil || theme.challengeId != nil) && !owned
         VStack(spacing: 10) {
             swatch(theme)
             Text(theme.name).font(.system(size: 15, weight: .heavy, design: .rounded)).foregroundStyle(Palette.ink)
@@ -68,7 +69,7 @@ struct ThemesView: View {
             Button { haptics.select(); store.selectTheme(theme.id) } label: { label("Select", bg: Palette.card, fg: Palette.ink, bordered: true) }
                 .buttonStyle(.plain)
         } else if eventLocked {
-            label("Event Pass", bg: Palette.card, fg: Palette.inkSoft, bordered: true)
+            label(theme.challengeId != nil ? "Jan Challenge" : "Event Pass", bg: Palette.card, fg: Palette.inkSoft, bordered: true)
         } else {
             Button {
                 if store.buyTheme(theme) { haptics.unlock(); store.selectTheme(theme.id) } else { haptics.select() }

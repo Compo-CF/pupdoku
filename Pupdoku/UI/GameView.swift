@@ -74,6 +74,7 @@ struct GameView: View {
                 bonesEarned: store.lastWinBones,
                 bestTime: store.state.bestTime(for: session.puzzle.spec),
                 newlyUnlocked: store.lastUnlockedAchievements,
+                challengeNote: store.state.lastChallengeNote,
                 onPlayAgain: { Task { await playAgain(session.puzzle.spec) } },
                 onHome: { finishToHome() }
             )
@@ -134,7 +135,7 @@ struct GameView: View {
 
     private var appearance: BoardAppearance {
         BoardAppearance(highlightConflicts: store.state.highlightConflicts,
-                        colorblindLabels: store.state.colorblindLabels, regionColors: ThemeCatalog.theme(store.selectedThemeId).colors, costumeId: EventPassCatalog.all.first(where: { $0.themeId == store.selectedThemeId })?.costumeId)
+                        colorblindLabels: store.state.colorblindLabels, regionColors: ThemeCatalog.theme(store.selectedThemeId).colors, costumeId: ThemeCatalog.costumeId(for: store.selectedThemeId))
     }
 
     private func tap(_ flat: Int, in session: QueensSession) {

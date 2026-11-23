@@ -12,13 +12,14 @@ struct HomeView: View {
     /// Single enum-driven sheet destination (more robust than several stacked
     /// `.sheet` modifiers, which can conflict on iOS).
     private enum Sheet: Int, Identifiable {
-        case picker, stats, achievements, settings, shop, tip
+        case picker, stats, achievements, settings, shop, tip, challenge
         var id: Int { rawValue }
     }
 
     @State private var showGame = false
     @State private var activeSheet: Sheet?
     @State private var isStarting = false
+    @State private var challengeForSheet: EventChallenge?
 
     var body: some View {
         ZStack {
@@ -44,6 +45,10 @@ struct HomeView: View {
                     }
 
                     dailyButton
+
+                    if let c = EventChallengeCatalog.featured(today: Date().epochDayUTC) {
+                        challengeCard(c)
+                    }
                 }
                 .padding(.horizontal, 24)
 
@@ -85,6 +90,13 @@ struct HomeView: View {
             case .settings:     SettingsView()
             case .shop:         ShopView()
             case .tip:          TipReminderView()
+            case .challenge:
+                if let c = challengeForSheet {
+                    EventChallengeView(challenge: c) {
+                        activeSheet = nil
+                        start { await store.startDaily() }
+                    }
+                }
             }
         }
         .onChange(of: router.pendingRoute) { _, route in
@@ -106,10 +118,47 @@ struct HomeView: View {
     /// Store Winter Pass In-App Event). Unknown or nil routes are ignored, and
     /// onboarding / an active game are never interrupted.
     private func consumeDeepLink(_ route: DeepLinkRouter.Route?) {
-        guard route == .shop else { return }
+        guard let route else { return }
         router.pendingRoute = nil
         guard store.state.hasSeenOnboarding, !showGame else { return }
-        activeSheet = .shop
+        switch route {
+        case .shop:
+            activeSheet = .shop
+        case .challenge(let id):
+            guard let c = EventChallengeCatalog.challenge(id) else { return }
+            challengeForSheet = c
+            activeSheet = .challenge
+        }
+    }
+
+    private func challengeCard(_ c: EventChallenge) -> some View {
+        let today = Date().epochDayUTC
+        let progress = store.state.challengeProgress(c)
+        let done = store.state.isChallengeComplete(c)
+        let subtitle: String
+        if c.isUpcoming(today: today) { subtitle = "Starts \(c.dateLabel.components(separatedBy: " - ").first ?? c.dateLabel) · solve \(c.goal) Dailies" }
+        else if done { subtitle = "Complete! Confetti theme unlocked" }
+        else { subtitle = "\(progress)/\(c.goal) Dailies · \(c.daysLeft(today: today)) days left" }
+        return Button {
+            haptics.select(); challengeForSheet = c; activeSheet = .challenge
+        } label: {
+            HStack(spacing: 14) {
+                Text(c.emoji).font(.system(size: 26))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(c.name).font(.system(size: 16, weight: .heavy, design: .rounded))
+                    Text(subtitle).font(.system(size: 12, weight: .medium, design: .rounded))
+                        .foregroundStyle(Palette.inkSoft)
+                }
+                Spacer(minLength: 4)
+                Image(systemName: "chevron.right").font(.system(size: 13, weight: .bold)).foregroundStyle(Palette.inkSoft)
+            }
+            .foregroundStyle(Palette.ink)
+            .padding(.horizontal, 18).padding(.vertical, 12)
+            .frame(maxWidth: .infinity)
+            .background(Palette.card, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 18).stroke(Color(hex: "B79CF2").opacity(0.7), lineWidth: 1.5))
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Pieces

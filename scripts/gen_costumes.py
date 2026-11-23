@@ -32,7 +32,23 @@ def santa_hat():
   <rect x="62" y="90" width="120" height="20" rx="10" fill="#FFFFFF"/>
   <circle cx="184" cy="42" r="14" fill="#FFFFFF"/>'''
 
-COSTUMES = {"spooky": witch_hat, "winter": santa_hat}
+def party_hat():
+    # New Year: striped party cone + polka dots + gold pom + confetti bits.
+    return f'''
+  <path d="M86 102 L124 14 L162 102 Z" fill="#B79CF2" stroke="#7E5CC8" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M100 70 L148 70 L156 88 L92 88 Z" fill="#F7C948"/>
+  <path d="M112 42 L136 42 L141 54 L107 54 Z" fill="#F49AC1"/>
+  <circle cx="122" cy="96" r="4" fill="#FFFFFF"/>
+  <circle cx="140" cy="62" r="3.5" fill="#FFFFFF"/>
+  <circle cx="108" cy="62" r="3.5" fill="#FFFFFF"/>
+  <rect x="80" y="96" width="88" height="12" rx="6" fill="#F27B7B"/>
+  <circle cx="124" cy="14" r="11" fill="#F7C948" stroke="#D9A21E" stroke-width="2"/>
+  <rect x="64" y="40" width="9" height="5" rx="2" fill="#7FB8F0" transform="rotate(-25 68 42)"/>
+  <rect x="172" y="30" width="9" height="5" rx="2" fill="#8EDB9E" transform="rotate(30 176 32)"/>
+  <circle cx="178" cy="70" r="3.5" fill="#F49AC1"/>
+  <circle cx="60" cy="74" r="3.5" fill="#F7C948"/>'''
+
+COSTUMES = {"spooky": witch_hat, "winter": santa_hat, "newyear": party_hat}
 
 def contents(fn):
     return json.dumps({

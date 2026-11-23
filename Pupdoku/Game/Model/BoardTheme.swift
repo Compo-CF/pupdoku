@@ -9,6 +9,8 @@ struct BoardTheme: Identifiable, Equatable {
     let priceBones: Int          // 0 = free / not directly purchasable
     let eventPassId: String?     // non-nil = unlocked only via that Event Pass
     let hexes: [String]          // 9 region fills
+    var challengeId: String? = nil  // non-nil = earned only by finishing that Event Challenge
+    var costumeId: String? = nil    // puppy costume overlay drawn while this theme is selected
 
     var id_: String { id }
     var colors: [Color] { hexes.map { Color(hex: $0) } }
@@ -31,9 +33,16 @@ enum ThemeCatalog {
             "6B4E9E","E58A3C","3E3A5C","8C5AA8","C0873C","5A4E7A","A05AC0","D06A2C","4A4460"]),
         BoardTheme(id: "winter", name: "Winter", priceBones: 0, eventPassId: "eventpass.winter2026", hexes: [
             "BFE3F5","E7F1FA","9FC8E8","D64F4F","CFE8F0","8FB8D8","EAF4FB","5FA0C8","D9EAF4"]),
+        BoardTheme(id: "confetti", name: "New Year Confetti", priceBones: 0, eventPassId: nil, hexes: [
+            "F7C948","7FB8F0","F49AC1","8EDB9E","B79CF2","FFB36B","6FD3D1","F27B7B","E9D8A6"],
+                   challengeId: "challenge.newyear2027", costumeId: "newyear"),
     ]
 
     static func theme(_ id: String) -> BoardTheme { all.first { $0.id == id } ?? all[0] }
+    /// Costume overlay for a theme: its own, else the Event Pass that unlocks it.
+    static func costumeId(for themeId: String) -> String? {
+        theme(themeId).costumeId ?? EventPassCatalog.all.first(where: { $0.themeId == themeId })?.costumeId
+    }
     /// Themes purchasable directly with Bones (excludes free + event-locked).
     static var buyableWithBones: [BoardTheme] { all.filter { $0.priceBones > 0 && $0.eventPassId == nil } }
 }
