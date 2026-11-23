@@ -1,0 +1,24 @@
+{
+  "_doc": "In-App Event spec for ~/Neatly/scripts/asc/app_event.py. Times UTC; the challenge window in code (EventChallenge.swift) is UTC epoch days 20822..20849 = Jan 4 00:00Z - Feb 1 00:00Z 2027, matching the Daily Puzzle's UTC day.",
+  "app_id": "6797896315",
+  "referenceName": "New Year Pup Challenge 2027",
+  "badge": "CHALLENGE",
+  "purpose": "APPROPRIATE_FOR_ALL_USERS",
+  "priority": "HIGH",
+  "purchaseRequirement": "NO_COST_ASSOCIATED",
+  "primaryLocale": "en-US",
+  "deepLink": "pupdoku://event/newyear",
+  "publishStart": "2026-12-28T08:00:00Z",
+  "eventStart": "2027-01-04T00:00:00Z",
+  "eventEnd": "2027-02-01T00:00:00Z",
+  "localization": {
+    "locale": "en-US",
+    "name": "New Year Pup Challenge",
+    "shortDescription": "Solve 10 Dailies to win party-hat puppies",
+    "longDescription": "Solve 10 Daily Puzzles in January to earn the free New Year Confetti board, party-hat pups and 300 Bones."
+  },
+  "media": {
+    "EVENT_CARD": "card_1920x1080.png",
+    "EVENT_DETAILS_PAGE": "details_1080x1920.png"
+  }
+}
