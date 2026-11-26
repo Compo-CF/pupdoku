@@ -20,6 +20,7 @@ struct PupdokuApp: App {
     @State private var studioShelf = StudioShelfProvider(selfID: "pupdoku")
 
     init() {
+        ReviewManager.recordLaunch() // 5.6.3 gate: no review ask in the first session
         let persistence = (try? Persistence()) ?? Persistence.inMemory()
         let initial = persistence.load()
         _store = State(initialValue: GameStore(state: initial, persistence: persistence))
